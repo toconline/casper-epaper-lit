@@ -103,6 +103,7 @@ class EpaperRenderer {
       this._currentTextClass = `T1-${this._fontSize}-${this._textColor.substring(1)}-${this._fontMask}`; // TODO font idx ??? T1 => Tx
       if ( !this._styleMap.has(this._currentTextClass) ) {
         this._styleMap.add(this._currentTextClass);
+        if ( true) {
         this._styleSheet.insertRule(`
           .${this._currentTextClass} {
             font-family: ${this._font};
@@ -111,6 +112,19 @@ class EpaperRenderer {
             font-weight: ${this._fontMask & EpaperRenderer.BOLD_MASK ? 'bold' : 'normal'}
           }
         `);
+        } else {
+        this._styleSheet.insertRule(
+        '.'+ this._currentTextClass
+           +'{font-family:'
+           + this._font
+           +';font-size:'
+           + this._fontSize
+           + 'px;fill:'
+           + this._textColor
+           +';font-weight:'
+           + this._fontMask & EpaperRenderer.BOLD_MASK ? 'bold' : 'normal'
+           + '}');
+        }
       }
     } else {
       this._currentTextStyle = `font-family: ${this._font}; font-size: ${this._fontSize}px; fill: ${this._textColor};font-weight: ${this._fontMask & EpaperRenderer.BOLD_MASK ? 'bold' : 'normal'}`;
@@ -257,7 +271,7 @@ class EpaperSvgRenderer extends EpaperRenderer {
             t.setAttribute('x', s.x);
             t.setAttribute('y', s.y);
             if ( this._useClasses ) {
-              t.setAttribute('class', this._currentTextClass);
+              t.setAttribute('class', this._currentTextClass + ' epaper-link');
             } else {
               t.setAttribute('style', this._currentTextStyle);
             }
@@ -326,6 +340,7 @@ class CasperEpaperLit extends LitElement {
       width: 32px;
       height: 32px;
       margin-left: 8px;
+      box-shadow: 1px 2px 6px -1px rgba(0, 0, 0, 0.6);
     }
 
     .background {
@@ -348,6 +363,50 @@ class CasperEpaperLit extends LitElement {
       box-sizing: border-box;
     }
 
+    .rotate {
+      transform: rotate(-90.0deg);
+      white-space: nowrap;
+    }
+
+    .tab {
+      display: flex;
+      position: absolute;
+      top: 0px;
+      justify-content: center;
+      align-items: center;
+      width: 32px;
+      color: white;
+      border-radius: 0 0 32px 0;
+      transform: translate3d(-100%, 0, 0);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .tab-slide {
+      transform: translate3d(0%, 0, 0);
+      transition: transform 0.5s ease-in-out;
+      box-shadow: 1px 2px 6px -1px rgba(0, 0, 0, 0.6);
+    }
+
+    .tab1 {
+      height: calc(100% - 48px);
+      background-color: #8c2f6c;
+    }
+
+    .tab2 {
+      height: calc(100% - 96px);
+      background-color: #e0b945;
+    }
+
+    .tab3 {
+      height: calc(100% - 144px);
+      background-color: #8bc34a;
+    }
+
+    .tab4 {
+      height: calc(100% - 192px);
+      background-color: #8c2f6c;
+    }
+
     .shadow {
       position: absolute;
       height: 100%;
@@ -358,7 +417,6 @@ class CasperEpaperLit extends LitElement {
       -webkit-box-shadow: inset 0 0 10px #00000080;
       box-shadow:         inset 0 0 10px #00000080;
     }
-
 
     .page {
       background-color: white;
@@ -384,14 +442,23 @@ class CasperEpaperLit extends LitElement {
       fill: #0002;
     }
 
+    .epaper-link:hover {
+      fill: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
   `;
 
   constructor () {
     super();
     this._svgRenderer = new EpaperSvgRenderer();
+    this._docStack = [];
     this.zoom = 1;
     this._pageWidth  = 595;
     this._pageHeight = 842;
+
+    window.pig = this;
   }
 
   async openAttachment (attachment, attachmentIndex, controlButtonsOptions = {}) {
@@ -426,7 +493,7 @@ class CasperEpaperLit extends LitElement {
       case 'file/jpeg':
       case 'html':
       default:
-        // TODO 
+        // TODO
         break;
       case 'epaper':
         return await this.openEpaper(attachment);
@@ -496,6 +563,11 @@ class CasperEpaperLit extends LitElement {
 
     return html`
       <div class="background">
+        ${[1,2,3,4].map((idx) => html`
+          <div id="tab${idx}" class="tab tab${idx}">
+            <span class="rotate"></span>
+          </div>`)
+        }
         <div id="page" class="page">
           <svg id="ilsvg" class="ilcanvas">
           </svg>
@@ -674,6 +746,8 @@ class CasperEpaperLit extends LitElement {
         //this.$['canvas-container'].style.overflow = '';
       }
 
+
+
       //this.__rightMmargin = response.page.margins.right;
       this._jrxml        = this._chapter.jrxml;
       this._locale       = this._chapter.locale;
@@ -721,6 +795,11 @@ class CasperEpaperLit extends LitElement {
         console.time('parse');
         const page = JSON.parse(message.substring(2, message.length - 1));
         console.timeEnd('parse');
+
+        // TODO temp hack
+        this._page.style.width  = this._pageWidth  * this.zoom + 'px';
+        this._page.style.height = this._pageHeight * this.zoom + 'px';
+
         this._svgRenderer.renderPage(page);
         break;
       case 'D':
