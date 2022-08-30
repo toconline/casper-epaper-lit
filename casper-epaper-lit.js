@@ -378,18 +378,19 @@ class CasperEpaperLit extends LitElement {
       color: white;
       border-radius: 0 0 32px 0;
       transform: translate3d(-100%, 0, 0);
-      transition: transform 0.3s ease-in-out;
+      transition: transform 0.3s ease-out;
+      cursor: pointer;
     }
 
     .tab-slide {
       transform: translate3d(0%, 0, 0);
-      transition: transform 0.5s ease-in-out;
+      transition: transform 0.5s ease-in;
       box-shadow: 1px 2px 6px -1px rgba(0, 0, 0, 0.6);
     }
 
     .tab1 {
       height: calc(100% - 48px);
-      background-color: #8c2f6c;
+      background-color: var(--primary-color);
     }
 
     .tab2 {
@@ -405,6 +406,11 @@ class CasperEpaperLit extends LitElement {
     .tab4 {
       height: calc(100% - 192px);
       background-color: #8c2f6c;
+    }
+
+    .tab5 {
+      height: calc(100% - 240px);
+      background-color: var(--primary-color);
     }
 
     .shadow {
@@ -453,7 +459,8 @@ class CasperEpaperLit extends LitElement {
   constructor () {
     super();
     this._svgRenderer = new EpaperSvgRenderer();
-    this._docStack = [];
+    this._docStack = []; // data model of the document stack
+    this._docTabs  = []; // tabs that control the document stack
     this.zoom = 1;
     this._pageWidth  = 595;
     this._pageHeight = 842;
@@ -562,10 +569,10 @@ class CasperEpaperLit extends LitElement {
   render () {
 
     return html`
-      <div class="background">
-        ${[1,2,3,4].map((idx) => html`
-          <div id="tab${idx}" class="tab tab${idx}">
-            <span class="rotate"></span>
+      <div class="background" @click="${(e) => this._pageClick(e)}" @mousemove="${(e) => this._mouseMove(e)}">
+        ${this._docStack.map((document, idx) => html`
+          <div .idx=${idx} class="tab tab${idx+1}">
+            <span class="rotate">${document.title}</span>
           </div>`)
         }
         <div id="page" class="page">
@@ -840,6 +847,99 @@ class CasperEpaperLit extends LitElement {
           this._chapterPageNumber = newPageNumber;
         }
         currentPage += this.document.chapters[i].pageCount;
+      }
+    }
+  }
+
+  async _pushDocument (document) {
+    if ( this._docStack.size >= 4 ) {
+      // todo error
+      return;
+    }
+    this._docStack.push(document);
+    this.requestUpdate();
+    await this.updateComplete;
+    this._docTabs = this.shadowRoot.querySelectorAll('.tab');
+    setTimeout((e) => {
+      for (const tab of this.shadowRoot.querySelectorAll('.tab')) {
+        tab.classList.add('tab-slide');
+      }
+    }, 1);
+
+  }
+
+  _mouseMove (event) {
+    let overTab = false;
+
+    // detect hovered element change ...
+    if ( this._lastOnOverElem === undefined || this._lastOnOverElem !==  event.path[0] ) {
+      // ... the element under mice has changed
+      this._lastOnOverElem =  event.path[0];
+      for (const elem of event.path) {
+        if ( elem.classList && elem.classList.contains('tab') ) {
+          this._handleMouseOverTab(elem);
+          overTab = true;
+        }
+      }
+      if ( this._docTabs.length !== 0 && ! overTab ) {
+        this._handleMouseOutOfTab();
+      }
+    }
+  }
+
+  async _handleTabClick (tab) {
+    for ( let i = this._docStack.length - 1; i >= tab.idx; i--) {
+      // await close Sub document
+      this._docStack.splice(i,1);
+    }
+    this.requestUpdate();
+    await this.updateComplete;
+    this._docTabs = this.shadowRoot.querySelectorAll('.tab');
+  }
+
+  _handleMouseOverTab (tab) {
+    console.log('mouse over tab ', tab.idx);
+    for (const t of this._docTabs) {
+      if ( t.idx > tab.idx ) {
+        t.classList.remove('tab-slide');
+      } else {
+        t.classList.add('tab-slide');
+      }
+    }
+  }
+
+  _handleMouseOutOfTab () {
+    console.log('mouse out of tabs');
+    for (const tab of this._docTabs) {
+      tab.classList.add('tab-slide');
+    }
+  }
+
+
+  async _pageClick (event) {
+    for (const elem of event.path) {
+      if ( elem.classList && elem.classList.contains('epaper-link') ) {
+        const text = elem.textContent;
+        if (text.match(/^\d+\/\d+$/)) {
+          console.log('click on transaction link: ', text);
+        } else if ( text.match(/^\d+$/)) {
+          console.log('click on extracto link: ', text);
+          await this.openAttachment({
+            title: 'Extrato 2',
+            type: 'epaper',
+            epaper2: true,
+            chapters: [{
+                limit: 2,
+                close_previous: false,
+                jrxml: 'default/account_statement',
+                path: `account_statement/0?filter[start_date]=2016-01-01&filter[end_date]=2016-12-31&filter[first_account]=${text}&filter[has_transactions]=true&filter[include_zeroes]=false`
+              }
+            ]
+          });
+        }
+        break;
+      } else if ( elem.classList && elem.classList.contains('tab') ) {
+        this._handleTabClick(elem);
       }
     }
   }
