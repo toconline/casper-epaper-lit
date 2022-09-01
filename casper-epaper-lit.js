@@ -507,52 +507,6 @@ class CasperEpaperLit extends LitElement {
     }
   }
 
-  async __openAttachment () {
-    //this.__customAttachmentFileType = false;
-    //this.__currentAttachmentName = this.__currentAttachment.name ? this.__currentAttachment.name : '';
-    //this.__updateDownloadIconAndTooltip();
-
-    // Open the attachment.
-    /*try {
-      switch (this.__currentAttachment.type) {
-        case 'file/pdf':
-          await this.__openPDF();
-          break;
-        case 'file/xml':
-        case 'file/txt':
-        case 'file/htm':
-        case 'file/html':
-        case 'file/email':
-          this.__landscape = false;
-          await this.__openIframe();
-          break;
-        case 'file/png':
-        case 'file/jpg':
-        case 'file/jpeg':
-          this.__landscape = false;
-          await this.__openImage();
-          break;
-        case 'epaper':
-          await this.__openServerDocument();
-          break;
-        case 'html':
-          this.__landscape = this.__currentAttachment.landscape;
-          await this.__openIframe();
-          break;
-        default:
-          if (this.__currentAttachment.type.startsWith('file/')) {
-            this.__customAttachmentFileType = true;
-            this.openGenericPage(this.$['download-generic-file-template']);
-          }
-          break;
-      }
-    } catch (error) {
-      console.error(error);
-
-      //this.__displayErrorPage();
-    }*/
-  }
-
   /**
    * Sets the epaper's zoom to a specific value.
    */
@@ -566,15 +520,25 @@ class CasperEpaperLit extends LitElement {
   //                                ~~~ LIT life cycle ~~~                                 //
   //***************************************************************************************//
 
+  _renderTabs () {
+    if ( this._docStack.length < 2 ) {
+      return undefined;
+    }
+    const tabs = [];
+    for ( let idx = 1; idx < this._docStack.length; idx++) {
+      tabs.push(html`
+        <div .idx=${idx-1} class="tab tab${idx}">
+          <span class="rotate">${this._docStack[idx-1].document.title}</span>
+        </div>`);
+    }
+    return tabs;
+  }
+
   render () {
 
     return html`
       <div class="background" @click="${(e) => this._pageClick(e)}" @mousemove="${(e) => this._mouseMove(e)}">
-        ${this._docStack.map((document, idx) => html`
-          <div .idx=${idx} class="tab tab${idx+1}">
-            <span class="rotate">${document.title}</span>
-          </div>`)
-        }
+        ${this._renderTabs()}
         <div id="page" class="page">
           <svg id="ilsvg" class="ilcanvas">
           </svg>
@@ -626,10 +590,7 @@ class CasperEpaperLit extends LitElement {
   async _gotoPreviousPage () {
     if (this._currentPage > 1) {
       this._currentPage--;
-      if ( 2.0 === this._socket._version ) { // [AG] - HB: required on v2...
-        //await this._currentPageChanged(this._currentPage)
-        await this._socket.gotoPage(this.documentId, this._currentPage);
-      }
+      await this._socket.gotoPage(this._document.serverId, this._currentPage); // TODO manage chapters
     }
   }
 
@@ -637,15 +598,8 @@ class CasperEpaperLit extends LitElement {
    * Navigate to the next page.
    */
   async _gotoNextPage () {
-    if ( 2.0 === this._socket._version ) { // [AG] - HB: required on v2...
-      this._currentPage++;
-      //await this._currentPageChanged(this._currentPage);
-      await this._socket.gotoPage(this.documentId, this._currentPage);
-    } else {
-      if (this._currentPage < this.__totalPageCount) {
-        this._currentPage++;
-      }
-    }
+    this._currentPage++; // TODO limit page when we know
+    await this._socket.gotoPage(this._document.serverId, this._currentPage);
   }
 
   /**
@@ -672,6 +626,50 @@ class CasperEpaperLit extends LitElement {
    * @param {Object} documentModel an object that specifies the layout and data of the document
    */
   async openEpaper (documentModel) {
+    // this should only be called with empty stack
+    const entry = await this._openEpaper(documentModel);
+    this._docStack = [ entry ];
+    this._document = this._docStack[this._docStack.length -1];
+  }
+
+  async pushEpaper (documentModel) {
+    if ( this._docStack.length >= 4 ) {
+      //todo error
+      return;
+    }
+
+    const entry = await this._openEpaper(documentModel);
+    this._docStack.push(entry);
+    this._document = this._docStack[this._docStack.length -1];
+    this.requestUpdate();
+    await this.updateComplete;
+    this._docTabs = this.shadowRoot.querySelectorAll('.tab');
+    setTimeout((e) => {
+        for (const tab of this.shadowRoot.querySelectorAll('.tab')) {
+          tab.classList.add('tab-slide');
+        }
+      }, 100
+    );
+  }
+
+  async _popEpaper () {
+    const entry = this._docStack.pop();
+    this._document = this._docStack[this._docStack.length -1];
+    await this._socket.closeDocument(entry.serverId, false);
+
+    // TODO review
+    this._pageWidth  = this._document.width;
+    this._pageHeight = this._document.height;
+    this._page.style.width  = this._pageWidth  * this.zoom + 'px';
+    this._page.style.height = this._pageHeight * this.zoom + 'px';
+  }
+
+  /**
+   * Inner open
+   * @param {*} documentModel 
+   * @returns 
+   */
+  async _openEpaper (documentModel) {
 
     if ( documentModel.epaper2 ) { // # TODO a clean api o app to get the proper socket
       this._socket = app.socket2;
@@ -679,70 +677,32 @@ class CasperEpaperLit extends LitElement {
       this._socket = app.socket;
     }
 
-    this._currentPage = 1; // # TODO goto page on open /
+    //this._currentPage = 1; // # TODO goto page on open /
     /*if ( documentModel.backgroundColor ) {
       this._setBackground(documentModel.backgroundColor);
     } else {
       this._setBackground('#FFF');
     }*/
-
-    this._prepareOpenCommand(documentModel);
-    return await this._openChapter();
-  }
-
-  /**
-   * Sanitizes the document object model, auto selects the first chapter
-   *
-   * @param {Object} documentModel the document model
-   */
-  _prepareOpenCommand (documentModel) {
-    this.document       = JSON.parse(JSON.stringify(documentModel));
-    this._chapterCount  = this.document.chapters.length;
-    this.totalPageCount = 0;
-
-    for (let idx = 0; idx < this._chapterCount; idx++) {
-      this.document.chapters[idx].locale    = this.document.chapters[idx].locale    || 'pt_PT';
-      this.document.chapters[idx].editable  = this.document.chapters[idx].editable  || false;
-      this.document.chapters[idx].pageCount = this.document.pageCount               || 1;
-      this.totalPageCount += this.document.chapters[idx].pageCount;
-    }
-    this._chapterIndex = 0;
-    this._chapter      = this.document.chapters[0];
-    this._edition      = false;
-  }
-
-  /**
-   * Opens the currently selected chapter
-   *
-   * @param {number} pageNumber page starts at 1
-   */
-   async _openChapter (pageNumber) {
-    //this.loading = true;
-
-    //this.__inputBoxDrawString = undefined;
-    //this.$.servertip.enabled = false;
-    //this.$.input.setVisible(false);
-    //this.__hideWidgets(true);
-    //this.__resetScroll();
-    this._nextPage  = pageNumber || 1;
-    //this.__openFocus = this.__chapter.editable ? (this.__nextPage > 0 ? 'start' : 'end') : 'none';
-    //this.__loading = true;
-    //this.__resetCanvasDimensions();
+    const entry = this._createDocumentEntry(documentModel);
 
     let response;
 
-    if (!(this._jrxml === this._chapter.jrxml && this._locale === this._chapter.locale)) {
+    if (this._jrxml !== entry.chapter.jrxml || this._locale !== entry.chapter.locale || entry.chapter.close_previous === false) {
 
-      response = await this._socket.openDocument(this._chapter);
+      response = await this._socket.openDocument(entry.chapter);
 
       if (response.errors !== undefined) {
         //this.__clear();
         //throw new Error(response.errors);
         // #TODO new error display
+        return;
       }
+      entry.serverId = response.id;
+      entry.width    = response.page.width;
+      entry.height   = response.page.height;
 
-      this.documentId  = response.id;
-      this._socket.registerDocumentHandler(this.documentId, (message) => this._documentHandler(message));
+      this._socket.registerDocumentHandler(response.id, (message) => this._documentHandler(message));
+
       this._pageWidth  = response.page.width;
       this._pageHeight = response.page.height;
 
@@ -753,47 +713,62 @@ class CasperEpaperLit extends LitElement {
         //this.$['canvas-container'].style.overflow = '';
       }
 
-
-
       //this.__rightMmargin = response.page.margins.right;
-      this._jrxml        = this._chapter.jrxml;
-      this._locale       = this._chapter.locale;
+      this._jrxml        = entry.jrxml;
+      this._locale       = entry.locale; 
     }
 
-    //this.landscape = this.__pageHeight < this.__pageWidth;
-    //this.__zoomChanged();
-
-    this._chapter.id = this.documentId;
-
     response = await this._socket.loadDocument({
-      id:       this.documentId,
-      editable: this._chapter.editable,
-      limit:    this._chapter.limit,
-      path:     this._chapter.path,
-      scale:    1, // New gen can use 1 always wos this.__sx,
-      focus:    this._openFocus,
-      page:     this._nextPage
+      id:       entry.serverId,
+      editable: entry.chapter.editable,
+      limit:    entry.chapter.limit,
+      path:     entry.chapter.path,
+      scale:    1,
+      focus:    true, // TODO review the purpose
+      page:     entry.pageNumber
     });
 
     if ( response.errors !== undefined ) {
       //this.__clear();
       //throw new Error(response.errors);
       // #TODO new error display
+      return;
+    }
+    this._currentPage = 1;  // to react to page from server this how chapters work
+    return entry;
+  }
+
+
+  /**
+   * Sanitizes the document model, auto selects the first chapter
+   *
+   * @param {Object} documentModel the document model
+   * @return the sanitized document model
+   */
+  _createDocumentEntry (documentModel) {
+    // deep clone the model ...
+    const document = JSON.parse(JSON.stringify(documentModel));
+
+    // ... build the (document stack) entry ...
+    const entry = {
+      document:       document,
+      chapter:        document.chapters[0],
+      chapterCount:   document.chapters.length,
+      chapterIndex:   0,
+      totalPageCount: 0,
+      serverId:       undefined,
+      width:          undefined,
+      height:         undefined,
     }
 
-    this._path    = this._chapter.path;
-    this._params  = this._chapter.params;
-    this._edition = this._chapter.editable;
-    //this.documentScale  = this.__sx;
+    // ... ensure the model chapters have sane defaults ...
+    for (const chapter of document.chapters) {
+      chapter.locale    = chapter.locale    || 'pt_PT';
+      chapter.editable  = chapter.editable  || false;
+      chapter.pageCount = chapter.pageCount || 1; // was document.pageCount ?? strange
+    }
 
-    //this.__scalePxToServer = this.__pageWidth * this.__ratio / this.__canvas.width;
-
-    //this._repaintPage();
-
-    //this.__loading = false;
-    //this.$.servertip.enabled = true;
-    //this.loading = false;
-    return true;
+    return entry;
   }
 
   _documentHandler (message) {
@@ -802,12 +777,12 @@ class CasperEpaperLit extends LitElement {
         console.time('parse');
         const page = JSON.parse(message.substring(2, message.length - 1));
         console.timeEnd('parse');
+        this._svgRenderer.renderPage(page);
 
-        // TODO temp hack
-        this._page.style.width  = this._pageWidth  * this.zoom + 'px';
+        // TODO review this
+        this._page.style.width  = this._pageWidth  * this.zoom + 'px';  
         this._page.style.height = this._pageHeight * this.zoom + 'px';
 
-        this._svgRenderer.renderPage(page);
         break;
       case 'D':
         // Ignore V1 protocol (aka "gerber") drawing orders
@@ -816,56 +791,6 @@ class CasperEpaperLit extends LitElement {
         console.log('TODO message: ', message);
         break;
     }
-  }
-
-  /**
-   * Goto to the specified page. Requests page change or if needed loads the required chapter
-   *
-   * @param {number} pageNumber the page to render
-   */
-  async _currentPageChanged (pageNumber) {
-
-    if ( this.document && this.document.chapters && this.document.chapters.length >= 1 ) {
-      let currentPage = 1;
-
-      pageNumber = parseInt(pageNumber);
-      for ( let i = 0;  i < this.document.chapters.length; i++ ) {
-        if ( pageNumber >= currentPage && pageNumber < (currentPage + this.document.chapters[i].pageCount) ) {
-          let newPageNumber;
-
-          newPageNumber = 1 + pageNumber - currentPage;
-          if ( i === this.__chapterIndex ) {
-            if ( this._chapterPageNumber !== newPageNumber ) {
-              // #TODO  this.__resetScroll();
-              await this._socket.gotoPage(this.documentId, newPageNumber);
-              return pageNumber;
-            }
-          } else {
-            this.gotoChapter(i, newPageNumber);
-            return pageNumber;
-          }
-          this._chapterPageNumber = newPageNumber;
-        }
-        currentPage += this.document.chapters[i].pageCount;
-      }
-    }
-  }
-
-  async _pushDocument (document) {
-    if ( this._docStack.size >= 4 ) {
-      // todo error
-      return;
-    }
-    this._docStack.push(document);
-    this.requestUpdate();
-    await this.updateComplete;
-    this._docTabs = this.shadowRoot.querySelectorAll('.tab');
-    setTimeout((e) => {
-      for (const tab of this.shadowRoot.querySelectorAll('.tab')) {
-        tab.classList.add('tab-slide');
-      }
-    }, 1);
-
   }
 
   _mouseMove (event) {
@@ -888,9 +813,10 @@ class CasperEpaperLit extends LitElement {
   }
 
   async _handleTabClick (tab) {
-    for ( let i = this._docStack.length - 1; i >= tab.idx; i--) {
-      // await close Sub document
-      this._docStack.splice(i,1);
+    for (const t of this._docTabs) {
+      if ( t.idx >= tab.idx ) {
+        await this._popEpaper();
+      }
     }
     this.requestUpdate();
     await this.updateComplete;
@@ -915,17 +841,28 @@ class CasperEpaperLit extends LitElement {
     }
   }
 
-
   async _pageClick (event) {
     for (const elem of event.path) {
       if ( elem.classList && elem.classList.contains('epaper-link') ) {
         const text = elem.textContent;
         if (text.match(/^\d+\/\d+$/)) {
           console.log('click on transaction link: ', text);
+          await this.pushEpaper({
+            title: 'Lançamento CTB',
+            epaper2: true,
+            type: 'epaper',
+            chapters: [{
+                editable: false,
+                close_previous: false,
+                jrxml: 'default/accounting_transaction_detail',
+                path: 'vw_accounting_transactions/3008?include=lines'
+              }
+            ]
+          });
         } else if ( text.match(/^\d+$/)) {
           console.log('click on extracto link: ', text);
-          await this.openAttachment({
-            title: 'Extrato 2',
+          await this.pushEpaper({
+            title: `Extrato conta ${text}`,
             type: 'epaper',
             epaper2: true,
             chapters: [{
