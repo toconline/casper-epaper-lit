@@ -626,14 +626,16 @@ class CasperEpaperLit extends LitElement {
    * @param {Object} documentModel an object that specifies the layout and data of the document
    */
   async openEpaper (documentModel) {
-    // this should only be called with empty stack
+    this._unregisterDocumentHandlers();
     const entry = await this._openEpaper(documentModel);
     this._docStack = [ entry ];
     this._document = this._docStack[this._docStack.length -1];
+    this._docTabs = [];
+    this.requestUpdate();
   }
 
   async pushEpaper (documentModel) {
-    if ( this._docStack.length >= 4 ) {
+    if ( this._docStack.length >= 5 ) {
       //todo error
       return;
     }
@@ -655,6 +657,9 @@ class CasperEpaperLit extends LitElement {
   async _popEpaper () {
     const entry = this._docStack.pop();
     this._document = this._docStack[this._docStack.length -1];
+    console.warn('Todo socket unregister handler for ', entry.serverId);
+    //this._socket.unregisterDocumentHandler(entry.serverId);
+
     await this._socket.closeDocument(entry.serverId, false);
 
     // TODO review
@@ -769,6 +774,13 @@ class CasperEpaperLit extends LitElement {
     }
 
     return entry;
+  }
+
+  _unregisterDocumentHandlers () {
+    for (const doc of this._docStack) {
+      console.warn('Todo socket unregister handler for ', doc.serverId);
+    //  this._socket.unregisterDocumentHandler(doc.serverId);
+    }
   }
 
   _documentHandler (message) {
