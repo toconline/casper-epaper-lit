@@ -857,41 +857,37 @@ class CasperEpaperLit extends LitElement {
 
     for (const elem of event.path) {
       if ( elem.classList && elem.classList.contains('epaper-link') ) {
-        const text = elem.textContent;
-        if ( text.match(/^\d+$/)) {
-          console.log('click on extracto link: ', text);
-          await this.pushEpaper({
-            title: `Extrato conta ${text}`,
-            type: 'epaper',
-            epaper2: true,
-            chapters: [{
-                limit: 2,
-                close_previous: false,
-                jrxml: 'default/account_statement',
-                path: `account_statement/0?filter[start_date]=2016-01-01&filter[end_date]=2016-12-31&filter[first_account]=${text}&filter[has_transactions]=true&filter[include_zeroes]=false`
-              }
-            ]
-          });
-        } else { // link in good
-          const rect = this._page.getBoundingClientRect();
-          const link = await this._socket.getLink(
-            this._document.serverId,
-            (event.pageX - rect.left) / this.zoom,
-            (event.pageY - rect.top)  / this.zoom
-          )
-          await this.pushEpaper({
-            title:  eval(link.title),
+        const parent = {
+          filters: {
+              start_date:'2016-01-01',
+              end_date:'2016-12-31',
+              has_transactions:true,
+              include_zeroes:false
+          }
+        }
+        const rect = this._page.getBoundingClientRect();
+        const link = await this._socket.getLink(
+          this._document.serverId,
+          (event.pageX - rect.left) / this.zoom,
+          (event.pageY - rect.top)  / this.zoom
+        );
+        let path  = eval(link.path);
+        if (typeof path === 'function') {
+          path = path(this._document.chapter.path)
+        }
+        const title = eval(link.title);
+        await this.pushEpaper({
+            title:  title,
             epaper2: true,
             type: 'epaper',
             chapters: [{
                 editable: false,
                 close_previous: false,
                 jrxml: link.jrxml,
-                path: eval(link.path)
+                path: path
               }
             ]
-          });
-        }
+        });
         break;
       } else if ( elem.classList && elem.classList.contains('tab') ) {
         this._handleTabClick(elem);
