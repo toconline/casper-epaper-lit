@@ -271,7 +271,7 @@ class EpaperSvgRenderer extends EpaperRenderer {
             t.setAttribute('x', s.x);
             t.setAttribute('y', s.y);
             if ( this._useClasses ) {
-              t.setAttribute('class', this._currentTextClass + ' epaper-link');
+              t.setAttribute('class', this._currentTextClass + (p.l === true ? ' epaper-link' : ''));
             } else {
               t.setAttribute('style', this._currentTextStyle);
             }
@@ -658,7 +658,7 @@ class CasperEpaperLit extends LitElement {
     const entry = this._docStack.pop();
     this._document = this._docStack[this._docStack.length -1];
     console.warn('Todo socket unregister handler for ', entry.serverId);
-    //this._socket.unregisterDocumentHandler(entry.serverId);
+    this._socket.unregisterDocumentHandler(entry.serverId);
 
     await this._socket.closeDocument(entry.serverId, false);
 
@@ -779,7 +779,7 @@ class CasperEpaperLit extends LitElement {
   _unregisterDocumentHandlers () {
     for (const doc of this._docStack) {
       console.warn('Todo socket unregister handler for ', doc.serverId);
-    //  this._socket.unregisterDocumentHandler(doc.serverId);
+      this._socket.unregisterDocumentHandler(doc.serverId);
     }
   }
 
@@ -854,24 +854,11 @@ class CasperEpaperLit extends LitElement {
   }
 
   async _pageClick (event) {
+
     for (const elem of event.path) {
       if ( elem.classList && elem.classList.contains('epaper-link') ) {
         const text = elem.textContent;
-        if (text.match(/^\d+\/\d+$/)) {
-          console.log('click on transaction link: ', text);
-          await this.pushEpaper({
-            title: 'Lançamento CTB',
-            epaper2: true,
-            type: 'epaper',
-            chapters: [{
-                editable: false,
-                close_previous: false,
-                jrxml: 'default/accounting_transaction_detail',
-                path: 'vw_accounting_transactions/3008?include=lines'
-              }
-            ]
-          });
-        } else if ( text.match(/^\d+$/)) {
+        if ( text.match(/^\d+$/)) {
           console.log('click on extracto link: ', text);
           await this.pushEpaper({
             title: `Extrato conta ${text}`,
@@ -882,6 +869,25 @@ class CasperEpaperLit extends LitElement {
                 close_previous: false,
                 jrxml: 'default/account_statement',
                 path: `account_statement/0?filter[start_date]=2016-01-01&filter[end_date]=2016-12-31&filter[first_account]=${text}&filter[has_transactions]=true&filter[include_zeroes]=false`
+              }
+            ]
+          });
+        } else { // link in good
+          const rect = this._page.getBoundingClientRect();
+          const link = await this._socket.getLink(
+            this._document.serverId,
+            (event.pageX - rect.left) / this.zoom,
+            (event.pageY - rect.top)  / this.zoom
+          )
+          await this.pushEpaper({
+            title:  eval(link.title),
+            epaper2: true,
+            type: 'epaper',
+            chapters: [{
+                editable: false,
+                close_previous: false,
+                jrxml: link.jrxml,
+                path: eval(link.path)
               }
             ]
           });
