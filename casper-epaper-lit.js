@@ -118,6 +118,7 @@ class CasperEpaperLit extends LitElement {
     }
 
     casper-epaper-page {
+      position: absolute;
       place-self: center;
     }
 
@@ -127,6 +128,7 @@ class CasperEpaperLit extends LitElement {
     super();
     this._docStack = []; // data model of the document stack
     this._docTabs  = []; // tabs that control the document stack
+    this._docMap   = new Map();
     this.zoom = 1;
     this._pageWidth  = 595;
     this._pageHeight = 842;
@@ -204,9 +206,11 @@ class CasperEpaperLit extends LitElement {
 
     return html`
       <div class="background" @click="${(e) => this._pageClick(e)}" @mousemove="${(e) => this._mouseMove(e)}">
-        ${this._renderTabs()}
+        <casper-epaper-page id="back">
+        </casper-epaper-page>
         <casper-epaper-page id="page">
         </casper-epaper-page>
+        ${this._renderTabs()}
         <div class="toolbar">
           <casper-icon-button @click="${(e) => this._zoomOut(e)}"          tooltip="Reduzir"         icon="fa-light:minus" reverse></casper-icon-button>
           <casper-icon-button @click="${(e) => this._zoomIn(e)}"           tooltip="Ampliar"         icon="fa-light:plus" reverse></casper-icon-button>
@@ -231,6 +235,10 @@ class CasperEpaperLit extends LitElement {
     this._page = this.shadowRoot.getElementById('page');
     this._page.style.width  = this._pageWidth  * this.zoom + 'px';
     this._page.style.height = this._pageHeight * this.zoom + 'px';
+    this._back = this.shadowRoot.getElementById('back');
+    this._back.style.width  = this._pageWidth  * this.zoom + 'px';
+    this._back.style.height = this._pageHeight * this.zoom + 'px';
+    this._back.style.display = 'none';
   }
 
   //***************************************************************************************//
@@ -280,6 +288,7 @@ class CasperEpaperLit extends LitElement {
    */
   async openEpaper (documentModel) {
     this._unregisterDocumentHandlers();
+    this._hideBackPage();
     const entry = await this._openEpaper(documentModel);
     this._docStack = [ entry ];
     this._document = this._docStack[this._docStack.length -1];
@@ -292,6 +301,8 @@ class CasperEpaperLit extends LitElement {
       //todo error
       return;
     }
+    // render current document on the back page
+    this._renderAndSlideLeft(this._document.page);
 
     const entry = await this._openEpaper(documentModel);
     this._docStack.push(entry);
@@ -310,9 +321,9 @@ class CasperEpaperLit extends LitElement {
   async _popEpaper () {
     const entry = this._docStack.pop();
     this._document = this._docStack[this._docStack.length -1];
-    console.warn('Todo socket unregister handler for ', entry.serverId);
+    this._renderAndSlideRight(this._document.page);
     this._socket.unregisterDocumentHandler(entry.serverId);
-
+    this._docMap.delete(entry.serverId);
     await this._socket.closeDocument(entry.serverId, false);
 
     // TODO review
@@ -359,7 +370,8 @@ class CasperEpaperLit extends LitElement {
       entry.width    = response.page.width;
       entry.height   = response.page.height;
 
-      this._socket.registerDocumentHandler(response.id, (message) => this._documentHandler(message));
+      this._socket.registerDocumentHandler(response.id, (message, id) => this._documentHandler(message, id));
+      this._docMap.set(response.id, entry);
 
       this._pageWidth  = response.page.width;
       this._pageHeight = response.page.height;
@@ -431,29 +443,26 @@ class CasperEpaperLit extends LitElement {
 
   _unregisterDocumentHandlers () {
     for (const doc of this._docStack) {
-      console.warn('Todo socket unregister handler for ', doc.serverId);
       this._socket.unregisterDocumentHandler(doc.serverId);
     }
+    this._docMap.clear();
   }
 
-  _documentHandler (message) {
+  _documentHandler (message, docId) {
     switch (message[0]) {
       case 'J':
-        console.time('parse');
-        const page = JSON.parse(message.substring(2, message.length - 1));
-        console.timeEnd('parse');
-        this._page.renderAsSvg(page);
-
-        // TODO review this
-        this._page.style.width  = this._pageWidth  * this.zoom + 'px';  
-        this._page.style.height = this._pageHeight * this.zoom + 'px';
-
+        const doc = this._docMap.get(docId);
+        if ( doc === undefined ) {
+          // this doc is no longer active, just ignore
+          return;
+        }
+        doc.page = JSON.parse(message.substring(2, message.length - 1));
+        this._page.renderAsSvg(doc.page, this.zoom);
         break;
-      case 'D':
-        // Ignore V1 protocol (aka "gerber") drawing orders
+      case 'D': // Ignore V1 protocol (aka "gerber") drawing orders
         break;
       default:
-        console.log('TODO message: ', message);
+        console.log('Unknown message type ', message);
         break;
     }
   }
@@ -497,12 +506,16 @@ class CasperEpaperLit extends LitElement {
         t.classList.add('tab-slide');
       }
     }
+    this._renderAndOverRight(this._docStack[tab.idx].page);
   }
 
   _handleMouseOutOfTab () {
     console.log('mouse out of tabs');
     for (const tab of this._docTabs) {
       tab.classList.add('tab-slide');
+    }
+    if ( this._back.style.zIndex === '1' ) { // hack
+      this._hideAndSlideLeft();
     }
   }
 
@@ -546,6 +559,57 @@ class CasperEpaperLit extends LitElement {
         this._handleTabClick(elem);
       }
     }
+  }
+
+  _renderAndSlideLeft (page) {
+    this._back.style.opacity    = 1;
+    this._back.style.transition = 'none';
+    this._back.style.transform  = 'translateX(0px)';
+    this._back.renderAsSvg(page, this.zoom);
+    this._back.style.display    = 'block';
+    const prect  = this._back.getBoundingClientRect();
+    const erect = this.getBoundingClientRect();
+    this._back.style.transition = 'transform 1s';
+    this._back.style.transform  = `translateX(-${prect.width + prect.left - erect.left}px)`;
+  }
+
+  _renderAndSlideRight (page) {
+    this._back.style.opacity    = 1;
+    this._back.style.transition = 'none';
+    this._back.style.transform  = 'translateX(-700px)';  // TODO right length
+    this._back.renderAsSvg(page, this.zoom);
+    this._back.style.display    = 'block';
+    this._back.getBoundingClientRect();
+    this._back.style.transition = 'transform 0.3s';
+    this._back.style.transform  = 'translateX(0px)';
+  }
+
+  _renderAndOverRight (page) {
+    this._back.style.transition = 'none';
+    //this._back.style.transform  = 'translateX(-700px)'; // TODO right length
+    this._back.renderAsSvg(page, this.zoom);
+    this._back.style.display    = 'block';
+    this._back.getBoundingClientRect();
+    this._back.style.transition = 'transform 1s';
+    this._back.style.transform  = 'translateX(0px)';
+    this._back.style.zIndex     = 1;
+    this._back.style.opacity    = 0.8;
+  }
+
+  _hideAndSlideLeft () {
+    this._back.style.zIndex     = 0;
+    this._back.style.transition = 'none';
+    this._back.style.transform  = 'translateX(0px)';
+    this._back.style.display    = 'block';
+    this._back.getBoundingClientRect();
+    this._back.style.transition = 'transform 1s';
+    this._back.style.transform  = 'translateX(-700px)'; // TODO right length
+  }
+
+  _hideBackPage () {
+    this._back.style.transition = 'none';
+    this._back.style.transform  = 'translateX(0px)';
+    this._back.style.display    = 'none';
   }
 
   _getIconForFileType (fileType) {

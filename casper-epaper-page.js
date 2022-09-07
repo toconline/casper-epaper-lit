@@ -63,8 +63,10 @@ class CasperEpaperPage extends LitElement {
     }
   }
 
-  renderAsSvg (page) {
+  renderAsSvg (page, zoom) {
     this.shadowRoot.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet));
+    this.style.width  = page.p.w * zoom + 'px';  
+    this.style.height = page.p.h * zoom + 'px';
   }
 }
 

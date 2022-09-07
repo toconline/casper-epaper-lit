@@ -15,6 +15,7 @@ export class EpaperSvgRenderer extends EpaperRenderer {
 
     const p = page.p;
 
+    console.log(p);
     // start of a new SVG
     this._resetRender();
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -104,6 +105,9 @@ export class EpaperSvgRenderer extends EpaperRenderer {
         break;
       case 'R':
         this._updateShapeProps(p);
+        if ( !!p.r ) {
+          console.warn("we have a roundie");
+        }
         const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         r.setAttribute('x', p.x);
         r.setAttribute('y', p.y);
@@ -123,4 +127,56 @@ export class EpaperSvgRenderer extends EpaperRenderer {
       }
     }
   }
+
+  _updateTextStyle () {
+    if ( this._useClasses ) {
+      this._currentTextClass = `T1-${this._fontSize}-${this._textColor.substring(1)}-${this._fontMask}`; // TODO font idx ??? T1 => Tx
+      if ( !this._styleMap.has(this._currentTextClass) ) {
+        this._styleMap.add(this._currentTextClass);
+        if ( true) {
+        this._styleSheet.insertRule(`
+          .${this._currentTextClass} {
+            font-family: ${this._font};
+            font-size: ${this._fontSize}px;
+            fill: ${this._textColor};
+            font-weight: ${this._fontMask & EpaperRenderer.BOLD_MASK ? 'bold' : 'normal'}
+          }
+        `);
+        } else {
+        this._styleSheet.insertRule(
+        '.'+ this._currentTextClass
+           +'{font-family:'
+           + this._font
+           +';font-size:'
+           + this._fontSize
+           + 'px;fill:'
+           + this._textColor
+           +';font-weight:'
+           + this._fontMask & EpaperRenderer.BOLD_MASK ? 'bold' : 'normal'
+           + '}');
+        }
+      }
+    } else {
+      this._currentTextStyle = `font-family: ${this._font}; font-size: ${this._fontSize}px; fill: ${this._textColor};font-weight: ${this._fontMask & EpaperRenderer.BOLD_MASK ? 'bold' : 'normal'}`;
+    }
+  }
+
+  _updateShapeStyle () {
+    if ( this._useClasses ) {
+      this._currentLineClass = `L-${this._strokeColor.substring(1)}-${this._strokeWidth}`;
+      if (! this._styleMap.has(this._currentLineClass)) {
+        this._styleMap.add(this._currentLineClass);
+        this._styleSheet.insertRule(`
+          .${this._currentLineClass} {
+            stroke:${this._strokeColor};
+            stroke-width:${this._strokeWidth}
+          }
+        `);
+      }
+    } else {
+      this._currentLineStyle  = `stroke:${this._strokeColor};stroke-width:${this._strokeWidth}`;
+    }
+    this._currentShapeStyle = `fill:${this._fillColor}`; // TODO use class
+  }
+
 }
