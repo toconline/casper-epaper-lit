@@ -28,11 +28,11 @@ class CasperEpaperPage extends LitElement {
       stroke-width: 1;
     }
 
-    .band {
+    .band, .detail {
       fill: #fff0;
     }
 
-    .band:hover {
+    .detail:hover {
       fill: #0002;
     }
 

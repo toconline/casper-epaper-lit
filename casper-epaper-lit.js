@@ -34,6 +34,7 @@ class CasperEpaperLit extends LitElement {
       height: 32px;
       margin-left: 8px;
       box-shadow: 1px 2px 6px -1px rgba(0, 0, 0, 0.6);
+      z-index: 3;
     }
 
     .background {
@@ -79,6 +80,7 @@ class CasperEpaperLit extends LitElement {
       transform: translate3d(0%, 0, 0);
       transition: transform 0.5s ease-in;
       box-shadow: 1px 2px 6px -1px rgba(0, 0, 0, 0.6);
+      z-index: 3;
     }
 
     .tab1 {
@@ -115,11 +117,16 @@ class CasperEpaperLit extends LitElement {
       -moz-box-shadow:    inset 0 0 10px #00000080;
       -webkit-box-shadow: inset 0 0 10px #00000080;
       box-shadow:         inset 0 0 10px #00000080;
+      z-index: 3;
     }
 
     casper-epaper-page {
       position: absolute;
       place-self: center;
+    }
+
+    .back-page {
+      background-color: #fffbc3;
     }
 
   `;
@@ -321,7 +328,6 @@ class CasperEpaperLit extends LitElement {
   async _popEpaper () {
     const entry = this._docStack.pop();
     this._document = this._docStack[this._docStack.length -1];
-    this._renderAndSlideRight(this._document.page);
     this._socket.unregisterDocumentHandler(entry.serverId);
     this._docMap.delete(entry.serverId);
     await this._socket.closeDocument(entry.serverId, false);
@@ -492,6 +498,7 @@ class CasperEpaperLit extends LitElement {
         await this._popEpaper();
       }
     }
+    this._hideBackPage();
     this.requestUpdate();
     await this.updateComplete;
     this._docTabs = this.shadowRoot.querySelectorAll('.tab');
@@ -499,13 +506,15 @@ class CasperEpaperLit extends LitElement {
 
   _handleMouseOverTab (tab) {
     console.log('mouse over tab ', tab.idx);
+    /*
+    // not hidding tabs for now  
     for (const t of this._docTabs) {
       if ( t.idx > tab.idx ) {
         t.classList.remove('tab-slide');
       } else {
         t.classList.add('tab-slide');
       }
-    }
+    }*/
     this._renderAndOverRight(this._docStack[tab.idx].page);
   }
 
@@ -567,32 +576,20 @@ class CasperEpaperLit extends LitElement {
     this._back.style.transform  = 'translateX(0px)';
     this._back.renderAsSvg(page, this.zoom);
     this._back.style.display    = 'block';
-    const prect  = this._back.getBoundingClientRect();
+    const prect = this._back.getBoundingClientRect();
     const erect = this.getBoundingClientRect();
     this._back.style.transition = 'transform 1s';
     this._back.style.transform  = `translateX(-${prect.width + prect.left - erect.left}px)`;
   }
 
-  _renderAndSlideRight (page) {
-    this._back.style.opacity    = 1;
-    this._back.style.transition = 'none';
-    this._back.style.transform  = 'translateX(-700px)';  // TODO right length
-    this._back.renderAsSvg(page, this.zoom);
-    this._back.style.display    = 'block';
-    this._back.getBoundingClientRect();
-    this._back.style.transition = 'transform 0.3s';
-    this._back.style.transform  = 'translateX(0px)';
-  }
-
   _renderAndOverRight (page) {
     this._back.style.transition = 'none';
-    //this._back.style.transform  = 'translateX(-700px)'; // TODO right length
     this._back.renderAsSvg(page, this.zoom);
     this._back.style.display    = 'block';
-    this._back.getBoundingClientRect();
+    this._back.style.zIndex     = 1;
+    this._back.getBoundingClientRect(); // to force sync style update
     this._back.style.transition = 'transform 1s';
     this._back.style.transform  = 'translateX(0px)';
-    this._back.style.zIndex     = 1;
     this._back.style.opacity    = 0.8;
   }
 
@@ -601,15 +598,17 @@ class CasperEpaperLit extends LitElement {
     this._back.style.transition = 'none';
     this._back.style.transform  = 'translateX(0px)';
     this._back.style.display    = 'block';
-    this._back.getBoundingClientRect();
+    const prect = this._back.getBoundingClientRect();
+    const erect = this.getBoundingClientRect();
     this._back.style.transition = 'transform 1s';
-    this._back.style.transform  = 'translateX(-700px)'; // TODO right length
+    this._back.style.transform  = `translateX(-${prect.width + prect.left - erect.left}px)`;
   }
 
   _hideBackPage () {
+    this._back.style.display    = 'none';
+    this._back.style.zIndex     = 0;
     this._back.style.transition = 'none';
     this._back.style.transform  = 'translateX(0px)';
-    this._back.style.display    = 'none';
   }
 
   _getIconForFileType (fileType) {

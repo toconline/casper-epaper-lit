@@ -14,8 +14,6 @@ export class EpaperSvgRenderer extends EpaperRenderer {
     this._styleSheet = styleSheet;
 
     const p = page.p;
-
-    console.log(p);
     // start of a new SVG
     this._resetRender();
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -49,7 +47,7 @@ export class EpaperSvgRenderer extends EpaperRenderer {
     r.setAttribute('y', p.oy);
     r.setAttribute('width', page.p.w);
     r.setAttribute('height', p.h);
-    r.setAttribute('class', 'band');
+    r.setAttribute('class', band.t === 'DT' ? 'detail' : 'band');
     this._bg.appendChild(r);
 
     for (const elem of band.e) {
