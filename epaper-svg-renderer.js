@@ -16,40 +16,62 @@ export class EpaperSvgRenderer extends EpaperRenderer {
     const p = page.p;
     // start of a new SVG
     this._resetRender();
+
+    // ... create the svg object ...
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${p.w} ${p.h}`);
     svg.setAttribute('class', 'epaper-svg');
-    this._bg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    svg.appendChild(this._bg);
-    this._fg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    svg.appendChild(this._fg);
 
-    if ( false && this._debug ) {
+    // create a layer for the bands 
+    const bandLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    if ( this._debug ) {
       const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       r.setAttribute('x', p.ml);
       r.setAttribute('y', p.mt);
       r.setAttribute('width', p.w - p.ml - p.mr);
       r.setAttribute('height', p.h - p.mt - p.mb);
       r.setAttribute('class', 'debug-margin');
-      svg._bg.appendChild(r);
+      bandLayer.appendChild(r);
     }
+
+    // ... add rect for each detail band ...
+    for (const band of page.e) {
+      if ( band.t !== 'DT' ) {
+        continue;
+      }
+
+      const p = band.p;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', 0);
+      r.setAttribute('y', p.oy);
+      r.setAttribute('width', page.p.w);
+      r.setAttribute('height', p.h);
+      r.setAttribute('class', 'detail');
+      bandLayer.appendChild(r);
+    }
+    svg.appendChild(bandLayer);
+
+    // ... create an empty layer for the tooltips ...
+    const ttl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    ttl.setAttribute('id', 'tt-layer');
+    svg.appendChild(ttl);
+
+    // ...back ground layer for fills and text ...
+    this._bg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(this._bg);
+
+    // ... foreground layer for lines ...
+    this._fg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    svg.appendChild(this._fg);
 
     for (const band of page.e) {
       this.renderBand(band, page);
     }
+
     return svg;
   }
 
   renderBand (band, page) {
-    const p = band.p;
-    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    r.setAttribute('x', 0);
-    r.setAttribute('y', p.oy);
-    r.setAttribute('width', page.p.w);
-    r.setAttribute('height', p.h);
-    r.setAttribute('class', band.t === 'DT' ? 'detail' : 'band');
-    this._bg.appendChild(r);
-
     for (const elem of band.e) {
       this.renderElement(elem);
     }
@@ -124,6 +146,23 @@ export class EpaperSvgRenderer extends EpaperRenderer {
         this.renderElement(elem);
       }
     }
+  }
+
+  renderTooltips(svg, tooltips) {
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.setAttribute('id', 'tt-layer');
+
+    for (const t of tooltips.e) {
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', t.p.x);
+      r.setAttribute('y', t.p.y);
+      r.setAttribute('width', t.p.w);
+      r.setAttribute('height', t.p.h);
+      r.setAttribute('tooltip', t.ht);
+      r.setAttribute('class', 'tooltip');
+      group.appendChild(r);
+    }
+    return group;
   }
 
   _updateTextStyle () {

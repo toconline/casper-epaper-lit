@@ -28,18 +28,22 @@ class CasperEpaperPage extends LitElement {
       stroke-width: 1;
     }
 
-    .band, .detail {
+    .detail {
       fill: #fff0;
     }
 
     .detail:hover {
-      fill: #0002;
+      fill: #ddf8;
     }
 
     .epaper-link:hover {
       fill: blue;
       text-decoration: underline;
       cursor: pointer;
+    }
+
+    .tooltip {
+      fill: #fff0;
     }
 
   `;
@@ -65,9 +69,19 @@ class CasperEpaperPage extends LitElement {
 
   renderAsSvg (page, zoom) {
     this.shadowRoot.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet));
-    this.style.width  = page.p.w * zoom + 'px';  
+    this.style.width  = page.p.w * zoom + 'px';
     this.style.height = page.p.h * zoom + 'px';
   }
+
+  renderSvgTooltips (tooltips) {
+    const svg = this.shadowRoot.querySelector('svg');
+    if ( svg ) {
+      const group = CasperEpaperPage.svgRenderer.renderTooltips(svg, tooltips);
+      const old   = this.shadowRoot.getElementById('tt-layer');
+      svg.replaceChild(group, old);
+    }
+  }
+
 }
 
 customElements.define('casper-epaper-page', CasperEpaperPage);

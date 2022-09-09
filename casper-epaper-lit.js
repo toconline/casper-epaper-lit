@@ -76,6 +76,10 @@ class CasperEpaperLit extends LitElement {
       cursor: pointer;
     }
 
+    .tab:hover {
+      font-weight: bold;
+    }
+
     .tab-slide {
       transform: translate3d(0%, 0, 0);
       transition: transform 0.5s ease-in;
@@ -348,6 +352,10 @@ class CasperEpaperLit extends LitElement {
 
     if ( documentModel.epaper2 ) { // # TODO a clean api o app to get the proper socket
       this._socket = app.socket2;
+      clearInterval(this._pigTimer);
+      this._pigTimer = setInterval((e) => {
+        app.socket2.keepAlive();
+      }, 120 * 1000); // HACK FOR OCC CONGRESS
     } else {
       this._socket = app.socket;
     }
@@ -464,7 +472,12 @@ class CasperEpaperLit extends LitElement {
         }
         doc.page = JSON.parse(message.substring(2, message.length - 1));
         this._page.renderAsSvg(doc.page, this.zoom);
+
+        // TODO coordinate better the tooltip request
+        clearTimeout(this._debounceTooltip);
+        this._debounceTooltip = setTimeout((e) => this._getPageHints(), 200);
         break;
+
       case 'D': // Ignore V1 protocol (aka "gerber") drawing orders
         break;
       default:
@@ -473,17 +486,38 @@ class CasperEpaperLit extends LitElement {
     }
   }
 
+  async _getPageHints () {
+    const tits = await this._socket.getPageHints(this._document.serverId);
+    // TODO confirm page and document ID
+    this._page.renderSvgTooltips(tits);
+  }
+
   _mouseMove (event) {
     let overTab = false;
+
 
     // detect hovered element change ...
     if ( this._lastOnOverElem === undefined || this._lastOnOverElem !==  event.path[0] ) {
       // ... the element under mice has changed
       this._lastOnOverElem =  event.path[0];
+
+      app.tooltip.mouseMoveToolip(event);
+
       for (const elem of event.path) {
-        if ( elem.classList && elem.classList.contains('tab') ) {
-          this._handleMouseOverTab(elem);
-          overTab = true;
+        if ( elem.classList ) {
+          if ( elem.classList.contains('tab') ) {
+            this._handleMouseOverTab(elem);
+            overTab = true;
+            break;
+          }
+          if ( elem.classList.contains('rotate') ) {
+            this._handleMouseOverTab(elem.parentElement);
+            overTab = true;
+            break;
+          }
+          if ( elem.classList.contains('tooltip') ) {
+            console.log('it exists after all');
+          }
         }
       }
       if ( this._docTabs.length !== 0 && ! overTab ) {
@@ -506,16 +540,18 @@ class CasperEpaperLit extends LitElement {
 
   _handleMouseOverTab (tab) {
     console.log('mouse over tab ', tab.idx);
-    /*
-    // not hidding tabs for now  
+
+    /* not hidding tabs for now  
     for (const t of this._docTabs) {
-      if ( t.idx > tab.idx ) {
+      if ( t.idx <= tab.idx ) {
         t.classList.remove('tab-slide');
       } else {
         t.classList.add('tab-slide');
       }
     }*/
-    this._renderAndOverRight(this._docStack[tab.idx].page);
+    if ( this._back.style.zIndex !== '1' ) { // hack
+      this._renderAndOverRight(this._docStack[tab.idx].page);
+    }
   }
 
   _handleMouseOutOfTab () {
@@ -630,6 +666,7 @@ class CasperEpaperLit extends LitElement {
         return 'fa-light:file-alt';
     }
   }
+
 
 }
 
