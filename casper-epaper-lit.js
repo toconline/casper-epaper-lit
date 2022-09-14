@@ -132,13 +132,13 @@ class CasperEpaperLit extends LitElement {
       place-self: center;
       width: 150px;
       height: 150px;
-      --casper-timed-status-ring-color: var(--primary-color);
+      /*--casper-timed-status-ring-color: var(--primary-color);
       --casper-timed-status-progress-color: var(--izibizi-primary-color);
       --casper-timed-status-icon: /static/icons/millennium;
       --casper-timed-status-icon-check: /static/icons/check;
       --casper-timed-status-icon-error: /static/icons/error;
       --casper-timed-status-icon-timeout: /static/icons/timeout;
-      --casper-timed-status-countdown-color: #8bc34a;
+      --casper-timed-status-countdown-color: #8bc34a;*/
     }
 
     casper-epaper-page {
