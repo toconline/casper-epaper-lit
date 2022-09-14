@@ -8,6 +8,7 @@
 // https://marian-caikovski.medium.com/do-not-waste-users-time-on-rendering-off-screen-content-eed17636e7a7
 
 import { html, css, LitElement } from 'lit';
+import '@cloudware-casper/casper-timed-status/casper-timed-status.js';
 import './casper-epaper-page.js'
 
 class CasperEpaperLit extends LitElement {
@@ -113,6 +114,8 @@ class CasperEpaperLit extends LitElement {
     }
 
     .shadow {
+      display: flex;
+      justify-content: center;
       position: absolute;
       height: 100%;
       width: 100%;
@@ -122,6 +125,20 @@ class CasperEpaperLit extends LitElement {
       -webkit-box-shadow: inset 0 0 10px #00000080;
       box-shadow:         inset 0 0 10px #00000080;
       z-index: 3;
+      /*background-color: rgba(0, 0, 0, 0.8);*/
+    }
+
+    casper-timed-status {
+      place-self: center;
+      width: 150px;
+      height: 150px;
+      --casper-timed-status-ring-color: var(--primary-color);
+      --casper-timed-status-progress-color: var(--izibizi-primary-color);
+      --casper-timed-status-icon: /static/icons/millennium;
+      --casper-timed-status-icon-check: /static/icons/check;
+      --casper-timed-status-icon-error: /static/icons/error;
+      --casper-timed-status-icon-timeout: /static/icons/timeout;
+      --casper-timed-status-countdown-color: #8bc34a;
     }
 
     casper-epaper-page {
@@ -230,6 +247,7 @@ class CasperEpaperLit extends LitElement {
         </div>
       </div>
       <div class="shadow">
+        <casper-timed-status></casper-timed-status>
       </div>
     `;
   }
