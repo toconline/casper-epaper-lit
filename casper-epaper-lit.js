@@ -247,7 +247,7 @@ class CasperEpaperLit extends LitElement {
         </div>
       </div>
       <div class="shadow">
-        <casper-timed-status></casper-timed-status>
+        <!--casper-timed-status></casper-timed-status-->
       </div>
     `;
   }
