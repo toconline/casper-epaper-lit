@@ -512,16 +512,16 @@ class CasperEpaperLit extends LitElement {
 
   _mouseMove (event) {
     let overTab = false;
-
+    const path = event.composedPath();
 
     // detect hovered element change ...
-    if ( this._lastOnOverElem === undefined || this._lastOnOverElem !==  event.path[0] ) {
+    if ( this._lastOnOverElem === undefined || this._lastOnOverElem !==  path[0] ) {
       // ... the element under mice has changed
-      this._lastOnOverElem =  event.path[0];
+      this._lastOnOverElem =  path[0];
 
       app.tooltip.mouseMoveToolip(event);
 
-      for (const elem of event.path) {
+      for (const elem of path) {
         if ( elem.classList ) {
           if ( elem.classList.contains('tab') ) {
             this._handleMouseOverTab(elem);
@@ -584,7 +584,7 @@ class CasperEpaperLit extends LitElement {
 
   async _pageClick (event) {
 
-    for (const elem of event.path) {
+    for (const elem of event.composedPath()) {
       if ( elem.classList && elem.classList.contains('epaper-link') ) {
         const parent = {
           filters: {
