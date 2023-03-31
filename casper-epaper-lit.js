@@ -586,37 +586,24 @@ class CasperEpaperLit extends LitElement {
 
     for (const elem of event.composedPath()) {
       if ( elem.classList && elem.classList.contains('epaper-link') ) {
-        const parent = {
+
+        /*const parent = {
           filters: {
               start_date:'2016-01-01',
               end_date:'2016-12-31',
               has_transactions:true,
               include_zeroes:false
           }
-        }
+        }*/
+        // TODO use CTM inverse?  +fro SVG relative coordinates ?
         const rect = this._page.getBoundingClientRect();
         const link = await this._socket.getLink(
           this._document.serverId,
           (event.pageX - rect.left) / this.zoom,
           (event.pageY - rect.top)  / this.zoom
         );
-        let path  = eval(link.path);
-        if (typeof path === 'function') {
-          path = path(this._document.chapter.path)
-        }
-        const title = eval(link.title);
-        await this.pushEpaper({
-            title:  title,
-            epaper2: true,
-            type: 'epaper',
-            chapters: [{
-                editable: false,
-                close_previous: false,
-                jrxml: link.jrxml,
-                path: path
-              }
-            ]
-        });
+        const module   = await import(link.handler);
+        await this.pushEpaper(module.link_handler(link));
         break;
       } else if ( elem.classList && elem.classList.contains('tab') ) {
         this._handleTabClick(elem);
