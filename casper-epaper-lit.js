@@ -604,7 +604,7 @@ class CasperEpaperLit extends LitElement {
         );
         const idx = link.handler.lastIndexOf('/') + 1;
         const module = await import(`${link.handler.slice(0,idx)}${app.digest ? `${app.digest}.` : ''}${link.handler.slice(idx)}`);
-        await this.pushEpaper(module.link_handler(link));
+        await this.pushEpaper(await module.link_handler(link, this._document));
         break;
       } else if ( elem.classList && elem.classList.contains('tab') ) {
         this._handleTabClick(elem);
