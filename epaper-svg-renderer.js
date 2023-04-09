@@ -154,7 +154,6 @@ export class EpaperSvgRenderer extends EpaperRenderer {
           t: "I"
         }
         if ( p.u.length > 1 ) {
-          //console.log(`Imagine me ${p.i}@${p.u}`);
           const i = document.createElementNS('http://www.w3.org/2000/svg', 'image');
           i.setAttribute('x', p.x1);
           i.setAttribute('y', p.y1);
@@ -162,52 +161,35 @@ export class EpaperSvgRenderer extends EpaperRenderer {
           i.setAttribute('height', p.y2 - p.y1);
           i.setAttribute('href', 'http://127.0.0.1:3201/' + p.u);
 
-          let par = 'xMin'; // TODO MAP horizontal align
+          let par; // TODO check mapping
+          switch (p.ha) {
+            case 'L': par += 'xMin'; break;
+            case 'C': par += 'xMid'; break;
+            case 'R': par += 'xMax'; break;
+          }
           switch (p.va) {
             case 'M': par += 'YMid'; break;
-            case 'T': par += 'YMin'; break; // TODO check
-            case 'B': par += 'YMax'; break; // TODO check
+            case 'T': par += 'YMin'; break;
+            case 'B': par += 'YMax'; break;
+          }
+          switch ( p.s ) {
+            case 'CL':
+              // Only the portion of the image that fits the specified object width and height will be printed. Image is not stretched.
+              break;
+            case 'FF':
+              // Image will be stretched to adapt to the specified object width and height.
+              break;
+            case 'RS':
+              // Image will adapt to the specified object width or height keeping its original shape.
+              break;
+            case 'RH':
+              // A scale image type that instructs the engine to stretch the image height to fit the actual height of the image.
+              // If the actual image width exceeds the declared image element width, the image is proportionally stretched to fit the declared width.
           }
           par += ' meet'; // TODO map preserve AR
           i.setAttribute('preserveAspectRatio', par);
           this._bg.appendChild(i);
         }
-        /*
-                  let img_info = {
-            _id:   this.__getDouble(),
-            _path: this.__getString(),
-            _t:    this.__getDouble(),
-            _l:    this.__getDouble(),
-            _b:    this.__getDouble(),
-            _r:    this.__getDouble(),
-            _m:    this.__getString(),
-            _h:    this.__getString(),
-            _v:    this.__getString()
-          };
-
-          let img = this.__images[img_info._path];
-          if ( img === undefined && img_info._path.length ) {
-            img = new Image();
-            this.__images[img_info._path] = img;
-            img.onload = function() {
-              this.__restartRedrawTimer();
-            }.bind(this);
-            img.onerror = function() {
-              this.__images[img_info._path] = undefined;
-            }.bind(this);
-            img.src = this._uploaded_assets_url + img_info._path;
-            this.__images[img_info._path] = img;
-          }
-          if ( img && img.complete && typeof img.naturalWidth !== undefined && img.naturalWidth !== 0 ) {
-            try {
-              this._scale_image(img_info, img);
-            } catch (a_err) {
-              console.log(a_err);
-              // Keep the faulty image in the cache to avoid bombarding the server with broken requests
-            }
-          }
-          break;
-          */
         break;
       default:
         console.log(element.t);
