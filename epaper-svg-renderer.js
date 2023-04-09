@@ -161,7 +161,15 @@ export class EpaperSvgRenderer extends EpaperRenderer {
           i.setAttribute('width', p.x2 - p.x1);
           i.setAttribute('height', p.y2 - p.y1);
           i.setAttribute('href', 'http://127.0.0.1:3201/' + p.u);
-          i.setAttribute('preserveAspectRatio', 'xMinYMid meet'); // TODO map preserve AR
+
+          let par = 'xMin'; // TODO MAP horizontal align
+          switch (p.va) {
+            case 'M': par += 'YMid'; break;
+            case 'T': par += 'YMin'; break; // TODO check
+            case 'B': par += 'YMax'; break; // TODO check
+          }
+          par += ' meet'; // TODO map preserve AR
+          i.setAttribute('preserveAspectRatio', par);
           this._bg.appendChild(i);
         }
         /*
