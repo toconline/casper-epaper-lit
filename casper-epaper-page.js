@@ -36,10 +36,14 @@ class CasperEpaperPage extends LitElement {
       fill: #ddf8;
     }
 
-    .epaper-link:hover {
+    .epaper-link {
+      fill: #fff0;
+      cursor: pointer;
+    }
+
+    .epaper-link:hover text {
       fill: blue;
       text-decoration: underline;
-      cursor: pointer;
     }
 
     .tooltip {

@@ -94,24 +94,37 @@ export class EpaperSvgRenderer extends EpaperRenderer {
     switch ( element.t ) {
       case 'T':
         this._updateTextProps(p);
-        if ( false && p.l === true ) {
+        if ( p.l === true ) {
+          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'epaper-link');
+          const p = element.p;
           const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-          const p = element.f.e[0].p;
-          r.setAttribute('x', p.x1);
-          r.setAttribute('y', p.y1);
-          r.setAttribute('width', p.x2 - p.x1);
-          r.setAttribute('height', 20 + p.y2 - p.y1);
-          r.setAttribute('class', 'epaper-link');
-          this._bg.appendChild(r);
-        }
-        if ( element.ts ) {
-          for (const s of element.ts) {
-            const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            t.setAttribute('x', s.x);
-            t.setAttribute('y', s.y);
-            t.setAttribute('class', this._currentTextClass + (p.l === true ? ' epaper-link' : ''));
-            t.textContent = s.t;
-            this._bg.appendChild(t);
+          r.setAttribute('x', p.x);
+          r.setAttribute('y', p.y);
+          r.setAttribute('width', p.w);
+          r.setAttribute('height', p.h);
+          g.append(r);
+          if ( element.ts ) {
+            for (const s of element.ts) {
+              const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              t.setAttribute('x', s.x);
+              t.setAttribute('y', s.y);
+              t.setAttribute('class', this._currentTextClass);
+              t.textContent = s.t;
+              g.appendChild(t);
+            }
+          }
+          this._bg.appendChild(g);
+        } else {
+          if ( element.ts ) {
+            for (const s of element.ts) {
+              const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+              t.setAttribute('x', s.x);
+              t.setAttribute('y', s.y);
+              t.setAttribute('class', this._currentTextClass);
+              t.textContent = s.t;
+              this._bg.appendChild(t);
+            }
           }
         }
         break;
