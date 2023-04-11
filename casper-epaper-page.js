@@ -29,7 +29,7 @@ class CasperEpaperPage extends LitElement {
     }
 
     .detail {
-      fill: #fff0;
+      fill: transparent;
     }
 
     .detail:hover {
@@ -37,8 +37,11 @@ class CasperEpaperPage extends LitElement {
     }
 
     .epaper-link {
-      fill: #fff0;
       cursor: pointer;
+    }
+
+    .epaper-link rect {
+      fill: transparent;
     }
 
     .epaper-link:hover text {
