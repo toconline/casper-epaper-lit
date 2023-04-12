@@ -32,7 +32,7 @@ class CasperEpaperPage extends LitElement {
       fill: transparent;
     }
 
-    .detail:hover {
+    .hover-detail {
       fill: #ddf8;
     }
 
@@ -78,6 +78,8 @@ class CasperEpaperPage extends LitElement {
     this.shadowRoot.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet));
     this.style.width  = page.p.w * zoom + 'px';
     this.style.height = page.p.h * zoom + 'px';
+    this._svg   = this.shadowRoot.querySelector('svg');
+    this._bands = this.shadowRoot.querySelectorAll('.detail');
   }
 
   renderSvgTooltips (tooltips) {
@@ -86,6 +88,22 @@ class CasperEpaperPage extends LitElement {
       const group = CasperEpaperPage.svgRenderer.renderTooltips(svg, tooltips);
       const old   = this.shadowRoot.getElementById('tt-layer');
       svg.replaceChild(group, old);
+    }
+  }
+
+  mouseMove (event) {
+    return;
+    if ( this._svg ) {
+      let p = this._svg.createSVGPoint();
+      p.x = Math.floor(event.clientX);
+      p.y = Math.floor(event.clientY);
+      p   = p.matrixTransform(this._svg.getScreenCTM().inverse());
+      console.log(`in svg coords x=${p.x} y=${p.y}`);
+      for (const band of this._bands ) {
+        if ( p.checkEnclosure(band) ) {
+          band.classList.add('hover-detail');
+        }
+      }
     }
   }
 

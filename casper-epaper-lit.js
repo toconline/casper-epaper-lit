@@ -160,8 +160,9 @@ class CasperEpaperLit extends LitElement {
     this.zoom = 1;
     this._pageWidth  = 595;
     this._pageHeight = 842;
+    this._currentDetail = undefined; // TODO void this when document is redrawn
 
-    window.pig = this;
+    window.pig = this; // TODO remove!!!
   }
 
   async openAttachment (attachment, attachmentIndex, controlButtonsOptions = {}) {
@@ -511,18 +512,55 @@ class CasperEpaperLit extends LitElement {
   }
 
   _mouseMove (event) {
-    let overTab = false;
-    const path = event.composedPath();
+    let overTab    = false;
+    let overDetail = false;
+    const path     = event.composedPath();
 
+    /*for (const elem of path) {
+      if ( elem.classList ) {
+        if ( elem.classList.contains('detail') ) {
+          overDetail = true;
+          if ( this._currentDetail === undefined || elem !== this._currentDetail ) {
+            console.log('on a new detail dude');
+            if ( this._currentDetail !== undefined ) {
+              this._currentDetail.classList.remove('hover-detail');
+            }
+            this._currentDetail = elem;
+            this._currentDetail.classList.add('hover-detail');
+          }
+        }
+      }
+    }
+    if ( overDetail === false ) {
+      if ( this._currentDetail !== undefined ) {
+        this._currentDetail.classList.remove('hover-detail');
+        this._currentDetail = undefined;
+        console.log('out of detail dude');
+      }
+    }*/
+
+    // TODO review this crap
     // detect hovered element change ...
     if ( this._lastOnOverElem === undefined || this._lastOnOverElem !==  path[0] ) {
       // ... the element under mice has changed
       this._lastOnOverElem =  path[0];
 
       app.tooltip.mouseMoveToolip(event);
+      this._page.mouseMove(event);
 
       for (const elem of path) {
         if ( elem.classList ) {
+          /*if ( elem.classList.contains('detail') ) {
+            overDetail = true;
+            if ( this._currentDetail === undefined || elem !== this._currentDetail ) {
+              console.log('on a new detail dude');
+              if ( this._currentDetail !== undefined ) {
+                this._currentDetail.classList.remove('hover-detail');
+              }
+              this._currentDetail = elem;
+              this._currentDetail.classList.add('hover-detail');
+            }
+          }*/
           if ( elem.classList.contains('tab') ) {
             this._handleMouseOverTab(elem);
             overTab = true;
@@ -586,15 +624,6 @@ class CasperEpaperLit extends LitElement {
 
     for (const elem of event.composedPath()) {
       if ( elem.classList && elem.classList.contains('epaper-link') ) {
-
-        /*const parent = {
-          filters: {
-              start_date:'2016-01-01',
-              end_date:'2016-12-31',
-              has_transactions:true,
-              include_zeroes:false
-          }
-        }*/
         // TODO use CTM inverse?  +fro SVG relative coordinates ?
         const rect = this._page.getBoundingClientRect();
         const link = await this._socket.getLink(
