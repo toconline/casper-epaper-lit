@@ -1,7 +1,7 @@
 {
   "name": "@cloudware-casper/casper-epaper-lit",
   "main": "casper-epaper-lit.js",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "another take on epaper 2022 style",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
