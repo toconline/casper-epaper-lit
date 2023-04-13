@@ -55,6 +55,12 @@ class CasperEpaperPage extends LitElement {
 
   `;
 
+  constructor () {
+    super();
+    this._auxP = new DOMPoint();     // auxiliary point for mice tracking
+    this._currentDetail = undefined; // the detail band that is active
+  }
+
   //***************************************************************************************//
   //                                ~~~ LIT life cycle ~~~                                 //
   //***************************************************************************************//
@@ -75,33 +81,48 @@ class CasperEpaperPage extends LitElement {
   }
 
   renderAsSvg (page, zoom) {
-    this.shadowRoot.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet));
+    this._bands = [];
+    this.shadowRoot.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet, this._bands));
     this.style.width  = page.p.w * zoom + 'px';
     this.style.height = page.p.h * zoom + 'px';
-    this._svg   = this.shadowRoot.querySelector('svg');
-    this._bands = this.shadowRoot.querySelectorAll('.detail');
+    this._svg = this.shadowRoot.querySelector('svg');
   }
 
   renderSvgTooltips (tooltips) {
-    const svg = this.shadowRoot.querySelector('svg');
-    if ( svg ) {
-      const group = CasperEpaperPage.svgRenderer.renderTooltips(svg, tooltips);
+    if ( this._svg  ) {
+      const group = CasperEpaperPage.svgRenderer.renderTooltips(this._svg, tooltips);
       const old   = this.shadowRoot.getElementById('tt-layer');
-      svg.replaceChild(group, old);
+      this._svg.replaceChild(group, old);
     }
   }
 
   mouseMove (event) {
-    return;
     if ( this._svg ) {
-      let p = this._svg.createSVGPoint();
-      p.x = Math.floor(event.clientX);
-      p.y = Math.floor(event.clientY);
-      p   = p.matrixTransform(this._svg.getScreenCTM().inverse());
-      console.log(`in svg coords x=${p.x} y=${p.y}`);
-      for (const band of this._bands ) {
-        if ( p.checkEnclosure(band) ) {
-          band.classList.add('hover-detail');
+
+      // ... transform screen coordinates to SVG coordinates ...
+      this._auxP.x = Math.floor(event.clientX);
+      this._auxP.y = Math.floor(event.clientY);
+      const y = this._auxP.matrixTransform(this._svg.getScreenCTM().inverse()).y;
+
+      // ... check if the mouse moved out of the current detail band ...
+      if ( this._currentDetail !== undefined ) {
+        if ( y < this._currentDetail.y1 || y > this._currentDetail.y2 ) {
+          this._currentDetail.r.classList.remove('hover-detail');
+          this._currentDetail = undefined;
+        }
+      }
+
+      // ... find next active detail band ...
+      if ( this._currentDetail === undefined ) {
+        const band = this._bands.find((band) => {
+          return y >= band.y1 && y <= band.y2;
+        });
+
+        if ( band === undefined ) {
+          console.log('no band');
+        } else {
+          band.r.classList.add('hover-detail');
+          this._currentDetail = band;
         }
       }
     }

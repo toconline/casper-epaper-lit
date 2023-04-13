@@ -9,7 +9,7 @@ import { EpaperRenderer } from './epaper-renderer.js'
 
 export class EpaperSvgRenderer extends EpaperRenderer {
 
-  renderPage (page, styleSheet) {
+  renderPage (page, styleSheet, bands) {
 
     this._styleSheet = styleSheet;
 
@@ -39,7 +39,6 @@ export class EpaperSvgRenderer extends EpaperRenderer {
       if ( band.t !== 'DT' ) {
         continue;
       }
-
       const p = band.p;
       const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       r.setAttribute('x', 0);
@@ -48,6 +47,14 @@ export class EpaperSvgRenderer extends EpaperRenderer {
       r.setAttribute('height', p.h);
       r.setAttribute('class', 'detail');
       bandLayer.appendChild(r);
+
+      bands.push({
+        y1:  p.oy,
+        y2:  p.oy + p.h,
+        h:   p.h,
+        idx: p.idx,
+        r:   r
+      });
     }
     svg.appendChild(bandLayer);
 
@@ -152,20 +159,6 @@ export class EpaperSvgRenderer extends EpaperRenderer {
         this._bg.appendChild(r);
         break;
       case 'I':
-        const pig = {
-          p: {
-            ha: "C",
-            i: 140627205072976,
-            s: "RS",
-            u: "/static/svat-error@1x.png",
-            va: "M",
-            x1: 36,
-            x2: 54,
-            y1: 78,
-            y2: 96
-          },
-          t: "I"
-        }
         if ( p.u.length > 1 ) {
           const i = document.createElementNS('http://www.w3.org/2000/svg', 'image');
           i.setAttribute('x', p.x1);

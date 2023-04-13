@@ -516,28 +516,6 @@ class CasperEpaperLit extends LitElement {
     let overDetail = false;
     const path     = event.composedPath();
 
-    /*for (const elem of path) {
-      if ( elem.classList ) {
-        if ( elem.classList.contains('detail') ) {
-          overDetail = true;
-          if ( this._currentDetail === undefined || elem !== this._currentDetail ) {
-            console.log('on a new detail dude');
-            if ( this._currentDetail !== undefined ) {
-              this._currentDetail.classList.remove('hover-detail');
-            }
-            this._currentDetail = elem;
-            this._currentDetail.classList.add('hover-detail');
-          }
-        }
-      }
-    }
-    if ( overDetail === false ) {
-      if ( this._currentDetail !== undefined ) {
-        this._currentDetail.classList.remove('hover-detail');
-        this._currentDetail = undefined;
-        console.log('out of detail dude');
-      }
-    }*/
 
     // TODO review this crap
     // detect hovered element change ...
@@ -548,19 +526,10 @@ class CasperEpaperLit extends LitElement {
       app.tooltip.mouseMoveToolip(event);
       this._page.mouseMove(event);
 
+      //this._page.mouseMove(event);
+
       for (const elem of path) {
         if ( elem.classList ) {
-          /*if ( elem.classList.contains('detail') ) {
-            overDetail = true;
-            if ( this._currentDetail === undefined || elem !== this._currentDetail ) {
-              console.log('on a new detail dude');
-              if ( this._currentDetail !== undefined ) {
-                this._currentDetail.classList.remove('hover-detail');
-              }
-              this._currentDetail = elem;
-              this._currentDetail.classList.add('hover-detail');
-            }
-          }*/
           if ( elem.classList.contains('tab') ) {
             this._handleMouseOverTab(elem);
             overTab = true;
