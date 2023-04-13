@@ -114,19 +114,36 @@ class CasperEpaperPage extends LitElement {
 
       // ... find next active detail band ...
       if ( this._currentDetail === undefined ) {
-        const band = this._bands.find((band) => {
-          return y >= band.y1 && y <= band.y2;
-        });
-
-        if ( band === undefined ) {
-          console.log('no band');
-        } else {
+        const band = this._binaryFindBand(y);
+        if ( band !== undefined ) {
           band.r.classList.add('hover-detail');
           this._currentDetail = band;
         }
       }
     }
   }
+
+  _binaryFindBand (y) {
+
+    if ( this._bands !== undefined && this._bands.length > 0 ) {
+      let mid;
+      let min = 0.0;
+      let max = this._bands.length - 1;
+
+      while ( min <= max ) {
+        mid = Math.floor((min + max) / 2.0);
+        if ( y >= this._bands[mid].y1 && y <= this._bands[mid].y2 ) {
+          return this._bands[mid]; // found!
+        } else if ( this._bands[mid].y1 < y ) {
+          min = mid + 1;
+        } else {
+          max = mid - 1;
+        }
+      }
+    }
+    return undefined; // Not found!
+  }
+
 
 }
 
