@@ -513,9 +513,9 @@ class CasperEpaperLit extends LitElement {
 
   _mouseMove (event) {
     let overTab    = false;
-    let overDetail = false;
     const path     = event.composedPath();
 
+    this._page.mouseMove(event);
 
     // TODO review this crap
     // detect hovered element change ...
@@ -524,7 +524,6 @@ class CasperEpaperLit extends LitElement {
       this._lastOnOverElem =  path[0];
 
       app.tooltip.mouseMoveToolip(event);
-      this._page.mouseMove(event);
 
       //this._page.mouseMove(event);
 

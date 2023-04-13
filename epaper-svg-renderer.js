@@ -47,7 +47,6 @@ export class EpaperSvgRenderer extends EpaperRenderer {
       r.setAttribute('height', p.h);
       r.setAttribute('class', 'detail');
       bandLayer.appendChild(r);
-
       bands.push({
         y1:  p.oy,
         y2:  p.oy + p.h,

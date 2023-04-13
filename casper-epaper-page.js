@@ -98,7 +98,6 @@ class CasperEpaperPage extends LitElement {
 
   mouseMove (event) {
     if ( this._svg ) {
-
       // ... transform screen coordinates to SVG coordinates ...
       this._auxP.x = Math.floor(event.clientX);
       this._auxP.y = Math.floor(event.clientY);
