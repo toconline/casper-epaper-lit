@@ -99,7 +99,13 @@ export class EpaperSvgRenderer extends EpaperRenderer {
 
     switch ( element.t ) {
       case 'T':
+        let transform;
+
         this._updateTextProps(p);
+        if ( p.ra ) {
+          transform = `translate(${p.tx} ${p.ty}) rotate(${180 * p.ra / Math.PI})`;
+        }
+
         if ( p.l === true ) {
           const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           g.setAttribute('class', 'epaper-link');
@@ -116,6 +122,9 @@ export class EpaperSvgRenderer extends EpaperRenderer {
               t.setAttribute('x', s.x);
               t.setAttribute('y', s.y);
               t.setAttribute('class', this._currentTextClass);
+              if ( transform ) {
+                t.setAttribute('transform', transform);
+              }
               t.textContent = s.t;
               g.appendChild(t);
             }
@@ -128,6 +137,9 @@ export class EpaperSvgRenderer extends EpaperRenderer {
               t.setAttribute('x', s.x);
               t.setAttribute('y', s.y);
               t.setAttribute('class', this._currentTextClass);
+              if ( transform ) {
+                t.setAttribute('transform', transform);
+              }
               t.textContent = s.t;
               this._bg.appendChild(t);
             }
