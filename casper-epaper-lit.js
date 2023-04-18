@@ -144,9 +144,10 @@ class CasperEpaperLit extends LitElement {
     }
 
     .overlay casper-timed-status {
-      margin-top: 45%;
+      margin-top: 40vh;
       width: 120px;
       height: 120px;
+      flex-shrink: 0;
       --casper-timed-status-countdown-color: var(--primary-color);
       /*--casper-timed-status-ring-color: var(--primary-color);
       --casper-timed-status-progress-color: var(--izibizi-primary-color);
@@ -178,12 +179,11 @@ class CasperEpaperLit extends LitElement {
     super();
     this._docStack = []; // data model of the document stack
     this._docTabs  = []; // tabs that control the document stack
-    this._docMap   = new Map();
+    this._docMap = new Map();
     this.zoom = 1;
     this._pageWidth  = 595;
     this._pageHeight = 842;
     this._currentDetail = undefined; // TODO void this when document is redrawn
-    this._statusMsg     = "Loren ipsulym";
     window.pig = this; // TODO remove!!!
   }
 
@@ -363,17 +363,19 @@ class CasperEpaperLit extends LitElement {
     this._renderAndSlideLeft(this._document.page);
 
     const entry = await this._openEpaper(documentModel);
-    this._docStack.push(entry);
-    this._document = this._docStack[this._docStack.length -1];
-    this.requestUpdate();
-    await this.updateComplete;
-    this._docTabs = this.shadowRoot.querySelectorAll('.tab');
-    setTimeout((e) => {
-        for (const tab of this.shadowRoot.querySelectorAll('.tab')) {
-          tab.classList.add('tab-slide');
-        }
-      }, 100
-    );
+    if ( entry ) {
+      this._docStack.push(entry);
+      this._document = this._docStack[this._docStack.length -1];
+      this.requestUpdate();
+      await this.updateComplete;
+      this._docTabs = this.shadowRoot.querySelectorAll('.tab');
+      setTimeout((e) => {
+          for (const tab of this.shadowRoot.querySelectorAll('.tab')) {
+            tab.classList.add('tab-slide');
+          }
+        }, 100
+      );  
+    }
   }
 
   async _popEpaper () {
@@ -429,7 +431,7 @@ class CasperEpaperLit extends LitElement {
           //this.__clear();
           //throw new Error(response.errors);
           // #TODO new error display
-          return;
+          return undefined;
         }
         entry.serverId = response.id;
         entry.width    = response.page.width;
@@ -467,18 +469,18 @@ class CasperEpaperLit extends LitElement {
         //this.__clear();
         //throw new Error(response.errors);
         // #TODO new error display
-        return;
+        return undefined;
       }
       this._hideOverlay();
       this._currentPage = 1;  // to react to page from server this how chapters work
       return entry;
 
     } catch (error) {
+      console.log()
       this._showError(error);
       return undefined; // TODO how to handle upstream
     }
   }
-
 
   /**
    * Sanitizes the document model, auto selects the first chapter
