@@ -178,7 +178,7 @@ export class EpaperSvgRenderer extends EpaperRenderer {
           i.setAttribute('height', p.y2 - p.y1);
           i.setAttribute('href', 'http://127.0.0.1:3201/' + p.u);
 
-          let par; // TODO check mapping
+          let par = ''; // TODO check mapping
           switch (p.ha) {
             case 'L': par += 'xMin'; break;
             case 'C': par += 'xMid'; break;

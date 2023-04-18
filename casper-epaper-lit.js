@@ -20,6 +20,9 @@ class CasperEpaperLit extends LitElement {
     zoom: {
       type: Number,
       reflect: true
+    },
+    statusMsg: {
+      type: String,
     }
   }
 
@@ -113,9 +116,15 @@ class CasperEpaperLit extends LitElement {
       background-color: var(--primary-color);
     }
 
-    .shadow {
+    .hidden {
+      display: none;
+    }
+
+    .overlay {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      justify-content: start;
+      align-items: center;
       position: absolute;
       height: 100%;
       width: 100%;
@@ -125,20 +134,33 @@ class CasperEpaperLit extends LitElement {
       -webkit-box-shadow: inset 0 0 10px #00000080;
       box-shadow:         inset 0 0 10px #00000080;
       z-index: 3;
-      /*background-color: rgba(0, 0, 0, 0.8);*/
     }
 
-    casper-timed-status {
-      place-self: center;
-      width: 150px;
-      height: 150px;
+    .in-progress {
+      opacity: 0.7;
+      background-color: black;
+      transition: background-color 2s ease-in;
+      pointer-events: auto;
+    }
+
+    .overlay casper-timed-status {
+      margin-top: 45%;
+      width: 120px;
+      height: 120px;
+      --casper-timed-status-countdown-color: var(--primary-color);
       /*--casper-timed-status-ring-color: var(--primary-color);
       --casper-timed-status-progress-color: var(--izibizi-primary-color);
       --casper-timed-status-icon: /static/icons/millennium;
       --casper-timed-status-icon-check: /static/icons/check;
       --casper-timed-status-icon-error: /static/icons/error;
-      --casper-timed-status-icon-timeout: /static/icons/timeout;
-      --casper-timed-status-countdown-color: #8bc34a;*/
+      --casper-timed-status-icon-timeout: /static/icons/timeout;*/
+    }
+
+    .overlay h2 {
+      margin: 6px;
+      color: white;
+      font-size: 16px;
+      font-weight: normal;
     }
 
     casper-epaper-page {
@@ -161,7 +183,7 @@ class CasperEpaperLit extends LitElement {
     this._pageWidth  = 595;
     this._pageHeight = 842;
     this._currentDetail = undefined; // TODO void this when document is redrawn
-
+    this._statusMsg     = "Loren ipsulym";
     window.pig = this; // TODO remove!!!
   }
 
@@ -247,8 +269,9 @@ class CasperEpaperLit extends LitElement {
           <casper-icon-button @click="${(e) => this._gotoNextPage(e)}"     tooltip="Página seguinte" icon="fa-light:arrow-right"></casper-icon-button>
         </div>
       </div>
-      <div class="shadow">
-        <!--casper-timed-status></casper-timed-status-->
+      <div id="overlay" class="overlay" @click=${(e) => this._overlayClicked(e) }>
+        <casper-timed-status id="status"></casper-timed-status>
+        <h2 id="status-label">${this.statusMsg}</h2>
       </div>
     `;
   }
@@ -269,6 +292,11 @@ class CasperEpaperLit extends LitElement {
     this._back.style.width  = this._pageWidth  * this.zoom + 'px';
     this._back.style.height = this._pageHeight * this.zoom + 'px';
     this._back.style.display = 'none';
+
+    this._overlay     = this.shadowRoot.getElementById('overlay');
+    this._status      = this.shadowRoot.getElementById('status');
+    this._statusLabel = this.shadowRoot.getElementById('status-label');
+    this._hideOverlay();
   }
 
   //***************************************************************************************//
@@ -369,76 +397,86 @@ class CasperEpaperLit extends LitElement {
    */
   async _openEpaper (documentModel) {
 
-    if ( documentModel.epaper2 ) { // # TODO a clean api o app to get the proper socket
-      this._socket = app.socket2;
-      clearInterval(this._pigTimer);
-      this._pigTimer = setInterval((e) => {
-        app.socket2.keepAlive();
-      }, 120 * 1000); // HACK FOR OCC CONGRESS
-    } else {
-      this._socket = app.socket;
-    }
+    const timeout = 30;
+    try {
+      this._showOverlay('A carregar documento', timeout);
 
-    //this._currentPage = 1; // # TODO goto page on open /
-    /*if ( documentModel.backgroundColor ) {
-      this._setBackground(documentModel.backgroundColor);
-    } else {
-      this._setBackground('#FFF');
-    }*/
-    const entry = this._createDocumentEntry(documentModel);
+      if ( documentModel.epaper2 ) { // # TODO a clean api o app to get the proper socket
+        this._socket = app.socket2;
+        clearInterval(this._pigTimer);
+        this._pigTimer = setInterval((e) => {
+          app.socket2.keepAlive();
+        }, 120 * 1000); // HACK FOR OCC CONGRESS
+      } else {
+        this._socket = app.socket;
+      }
 
-    let response;
+      //this._currentPage = 1; // # TODO goto page on open /
+      /*if ( documentModel.backgroundColor ) {
+        this._setBackground(documentModel.backgroundColor);
+      } else {
+        this._setBackground('#FFF');
+      }*/
+      const entry = this._createDocumentEntry(documentModel);
 
-    if (this._jrxml !== entry.chapter.jrxml || this._locale !== entry.chapter.locale || entry.chapter.close_previous === false) {
+      let response;
 
-      response = await this._socket.openDocument(entry.chapter);
+      if (this._jrxml !== entry.chapter.jrxml || this._locale !== entry.chapter.locale || entry.chapter.close_previous === false) {
 
-      if (response.errors !== undefined) {
+        response = await this._socket.openDocument(entry.chapter);
+
+        if (response.errors !== undefined) {
+          //this.__clear();
+          //throw new Error(response.errors);
+          // #TODO new error display
+          return;
+        }
+        entry.serverId = response.id;
+        entry.width    = response.page.width;
+        entry.height   = response.page.height;
+
+        this._socket.registerDocumentHandler(response.id, (message, id) => this._documentHandler(message, id));
+        this._docMap.set(response.id, entry);
+
+        this._pageWidth  = response.page.width;
+        this._pageHeight = response.page.height;
+
+        if (isNaN(this._pageHeight) || this._pageHeight < 0) {
+          this._pageHeight = 4000;
+          //this.$['canvas-container'].style.overflow = 'auto';
+        } else {
+          //this.$['canvas-container'].style.overflow = '';
+        }
+
+        //this.__rightMmargin = response.page.margins.right;
+        this._jrxml        = entry.jrxml;
+        this._locale       = entry.locale; 
+      }
+
+      response = await this._socket.loadDocument({
+        id:       entry.serverId,
+        editable: entry.chapter.editable,
+        limit:    entry.chapter.limit,
+        path:     entry.chapter.path,
+        scale:    1,
+        focus:    true, // TODO review the purpose
+        page:     entry.pageNumber
+      });
+
+      if ( response.errors !== undefined ) {
         //this.__clear();
         //throw new Error(response.errors);
         // #TODO new error display
         return;
       }
-      entry.serverId = response.id;
-      entry.width    = response.page.width;
-      entry.height   = response.page.height;
+      this._hideOverlay();
+      this._currentPage = 1;  // to react to page from server this how chapters work
+      return entry;
 
-      this._socket.registerDocumentHandler(response.id, (message, id) => this._documentHandler(message, id));
-      this._docMap.set(response.id, entry);
-
-      this._pageWidth  = response.page.width;
-      this._pageHeight = response.page.height;
-
-      if (isNaN(this._pageHeight) || this._pageHeight < 0) {
-        this._pageHeight = 4000;
-        //this.$['canvas-container'].style.overflow = 'auto';
-      } else {
-        //this.$['canvas-container'].style.overflow = '';
-      }
-
-      //this.__rightMmargin = response.page.margins.right;
-      this._jrxml        = entry.jrxml;
-      this._locale       = entry.locale; 
+    } catch (error) {
+      this._showError(error);
+      return undefined; // TODO how to handle upstream
     }
-
-    response = await this._socket.loadDocument({
-      id:       entry.serverId,
-      editable: entry.chapter.editable,
-      limit:    entry.chapter.limit,
-      path:     entry.chapter.path,
-      scale:    1,
-      focus:    true, // TODO review the purpose
-      page:     entry.pageNumber
-    });
-
-    if ( response.errors !== undefined ) {
-      //this.__clear();
-      //throw new Error(response.errors);
-      // #TODO new error display
-      return;
-    }
-    this._currentPage = 1;  // to react to page from server this how chapters work
-    return entry;
   }
 
 
@@ -670,7 +708,35 @@ class CasperEpaperLit extends LitElement {
     }
   }
 
+  _showOverlay (message, timeout) {
+    this._status.timeout = timeout;
+    this._status.state = 'idle';
+    this._status.state = 'connecting';
+    this.statusMsg = message;
+    this._overlay.classList.add('in-progress');
+    this._status.classList.remove('hidden');
+    this._statusLabel.classList.remove('hidden');
+  }
 
+  _hideOverlay () {
+    this._status.state = 'idle';
+    this._status.classList.add('hidden');
+    this._statusLabel.classList.add('hidden');
+    this._overlay.classList.remove('in-progress');
+  }
+
+  _showError (error) {
+    this.statusMsg = error;
+    this._status.state = 'error';
+    this._overlay.classList.add('in-progress');
+    this._status.classList.remove('hidden');
+    this._statusLabel.classList.remove('hidden');
+  }
+
+  _overlayClicked (event) {
+    console.log(event);
+    this._hideOverlay();
+  }
 }
 
 customElements.define('casper-epaper-lit', CasperEpaperLit);
