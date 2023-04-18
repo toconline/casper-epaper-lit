@@ -158,10 +158,15 @@ class CasperEpaperLit extends LitElement {
     }
 
     .overlay h2 {
-      margin: 6px;
       color: white;
       font-size: 16px;
       font-weight: normal;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 6px 24px;
+      margin: 0px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     casper-epaper-page {
@@ -348,9 +353,11 @@ class CasperEpaperLit extends LitElement {
     this._unregisterDocumentHandlers();
     this._hideBackPage();
     const entry = await this._openEpaper(documentModel);
-    this._docStack = [ entry ];
-    this._document = this._docStack[this._docStack.length -1];
-    this._docTabs = [];
+    if ( entry ) {
+      this._docStack = [ entry ];
+      this._document = this._docStack[this._docStack.length -1];
+      this._docTabs = [];
+    }
     this.requestUpdate();
   }
 
@@ -728,7 +735,11 @@ class CasperEpaperLit extends LitElement {
   }
 
   _showError (error) {
-    this.statusMsg = error;
+    if ( error?.payload_errors[0]?.internal?.why ) {
+      this.statusMsg = error.payload_errors[0].internal.why;
+    } else {
+      this.statusMsg = error.error;
+    }
     this._status.state = 'error';
     this._overlay.classList.add('in-progress');
     this._status.classList.remove('hidden');
