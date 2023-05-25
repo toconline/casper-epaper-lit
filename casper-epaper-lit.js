@@ -543,7 +543,9 @@ class CasperEpaperLit extends LitElement {
         clearTimeout(this._debounceTooltip);
         this._debounceTooltip = setTimeout((e) => this._getPageHints(), 200);
         break;
-
+      case 'F': // focus
+        this._page.renderFocusAsSvg(JSON.parse(message.substring(2, message.length)));
+        break;
       case 'D': // Ignore V1 protocol (aka "gerber") drawing orders
         break;
       default:

@@ -70,6 +70,11 @@ export class EpaperSvgRenderer extends EpaperRenderer {
     this._fg = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     svg.appendChild(this._fg);
 
+    // ... create an empty layer for the inputs ...
+    const iw = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    iw.setAttribute('id', 'iw-layer');
+    svg.appendChild(iw);
+
     for (const band of page.e) {
       this.renderBand(band, page);
     }
@@ -235,6 +240,35 @@ export class EpaperSvgRenderer extends EpaperRenderer {
       group.appendChild(r);
     }
     return group;
+  }
+
+  renderInput(svg, widget) {
+    const iw = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    iw.setAttribute('id', 'iw-layer');
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    r.setAttribute('x', widget.p.x);
+    r.setAttribute('y', widget.p.y);
+    r.setAttribute('width', widget.p.w);
+    r.setAttribute('height', widget.p.h);
+    r.setAttribute('tooltip', widget.ht);
+    r.setAttribute('class', 'iw');
+
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', widget.p.x);
+    t.setAttribute('y', widget.p.y + widget.p.h);
+    t.setAttribute('class', 'it');
+    t.textContent = widget.p.rv;
+
+    g.appendChild(r);
+    g.appendChild(t);
+
+    iw.appendChild(g);
+
+    return iw;
+
   }
 
   _updateTextStyle () {

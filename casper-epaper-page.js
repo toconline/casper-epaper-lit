@@ -53,6 +53,16 @@ class CasperEpaperPage extends LitElement {
       fill: #fff0;
     }
 
+    .iw {
+      fill: #ff0000;
+    }
+
+    .it {
+      fill: #ffffff;
+      font-family: Verdana;
+      font-size: 8pt;
+    }
+
   `;
 
   constructor () {
@@ -94,6 +104,16 @@ class CasperEpaperPage extends LitElement {
       const old   = this.shadowRoot.getElementById('tt-layer');
       this._svg.replaceChild(group, old);
     }
+  }
+
+  renderFocusAsSvg (widget) {
+    const old = this.shadowRoot.getElementById('iw-layer');
+
+    if ( undefined !== widget.s ) {
+      const iw = CasperEpaperPage.svgRenderer.renderInput(this._svg, widget.s);
+      this._svg.replaceChild(iw, old);
+    }
+
   }
 
   mouseMove (event) {
