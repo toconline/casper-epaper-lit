@@ -25,7 +25,19 @@ class CasperEpaperPage extends LitElement {
     .debug-margin {
       fill: none;
       stroke: red;
-      stroke-width: 1;
+      stroke-width: 0.5;
+    }
+
+    .debug-line {
+      fill: none;
+      stroke: #f1f1f1;
+      stroke-width: 0.5
+    }
+
+    .debug-bounds {
+      fill: none;
+      stroke: #aed6f1;
+      stroke-width: 0.5;
     }
 
     .detail {

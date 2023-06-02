@@ -16,7 +16,6 @@ export class EpaperRenderer {
   static _imageCache;
 
   constructor () {
-    this._debug    = false;
     this._styleMap = new Set();
     this._styles   = [];
     this._resetRender();

@@ -9,6 +9,26 @@ import { EpaperRenderer } from './epaper-renderer.js'
 
 export class EpaperSvgRenderer extends EpaperRenderer {
 
+  newDebugLine (x1, y1, x2, y2) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', x1);
+    l.setAttribute('y1', y1);
+    l.setAttribute('x2', x2);
+    l.setAttribute('y2', y2);
+    l.setAttribute('class', 'debug-line');
+    return l;
+  }
+
+  newDebugBoundsRect (x, y, w, h) {
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    r.setAttribute('x', x);
+    r.setAttribute('y', y);
+    r.setAttribute('width', w);
+    r.setAttribute('height', h);
+    r.setAttribute('class', 'debug-bounds');
+    return r;
+  }
+
   renderPage (page, styleSheet, bands) {
 
     this._styleSheet = styleSheet;
@@ -24,14 +44,40 @@ export class EpaperSvgRenderer extends EpaperRenderer {
 
     // create a layer for the bands
     const bandLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    if ( this._debug ) {
-      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      r.setAttribute('x', p.ml);
-      r.setAttribute('y', p.mt);
-      r.setAttribute('width', p.w - p.ml - p.mr);
-      r.setAttribute('height', p.h - p.mt - p.mb);
-      r.setAttribute('class', 'debug-margin');
-      bandLayer.appendChild(r);
+
+    // ... debug layer ...
+    if ( undefined != p.dl ) {
+      const gl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      gl.setAttribute('gl', 'g-layer');
+      svg.appendChild(gl);
+      // ... grid?
+      if ( true === p.dl.p.sg ) {
+        // ... vertical lines ...
+        for ( let x = 0 ; x < p.w ; x += 7 ) {
+          gl.appendChild(this.newDebugLine(x, 0, x, p.h));
+        }
+        // ... horizontal lines ...
+        for ( let y = 0 ; y < p.h ; y += 7 ) {
+          gl.appendChild(this.newDebugLine(0, y, p.w, y));
+        }
+      }
+      // ... bands bounds?
+      if ( true === p.dl.p.sb ) {
+        for (const band of page.e) {
+          const p = band.p;          
+          gl.appendChild(this.newDebugBoundsRect(0, p.oy, page.p.w, p.h));
+        }
+      }
+      // ... margins?
+      if ( true === p.dl.p.sm ) {
+        const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r.setAttribute('x', p.ml);
+        r.setAttribute('y', p.mt);
+        r.setAttribute('width', p.w - p.ml - p.mr);
+        r.setAttribute('height', p.h - p.mt - p.mb);
+        r.setAttribute('class', 'debug-margin');
+        bandLayer.appendChild(r);
+      }  
     }
 
     // ... add rect for each detail band ...

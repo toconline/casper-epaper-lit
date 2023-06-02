@@ -414,8 +414,14 @@ class CasperEpaperLit extends LitElement {
         this._socket = app.socket2;
         clearInterval(this._pigTimer);
         this._pigTimer = setInterval((e) => {
-          app.socket2.keepAlive();
+          this._socket.keepAlive();
         }, 120 * 1000); // HACK FOR OCC CONGRESS
+      } else if ( documentModel.epaperDesigner ) { // # TODO a clean api o app to get the proper socket
+        this._socket = app.socket2designer;
+        clearInterval(this._pigTimer);
+        this._pigTimer = setInterval((e) => {
+          this._socket.keepAlive();
+        }, 120 * 1000); // HACK FOR OCC CONGRESS // DEVELOPER
       } else {
         this._socket = app.socket;
       }
@@ -432,7 +438,11 @@ class CasperEpaperLit extends LitElement {
 
       if (this._jrxml !== entry.chapter.jrxml || this._locale !== entry.chapter.locale || entry.chapter.close_previous === false) {
 
-        response = await this._socket.openDocument(entry.chapter);
+        if ( documentModel.epaperDesigner ) {
+          response = await this._socket.newDocument(entry.chapter);
+        } else {
+          response = await this._socket.openDocument(entry.chapter);
+        }
 
         if (response.errors !== undefined) {
           //this.__clear();
@@ -462,15 +472,24 @@ class CasperEpaperLit extends LitElement {
         this._locale       = entry.locale; 
       }
 
-      response = await this._socket.loadDocument({
-        id:       entry.serverId,
-        editable: entry.chapter.editable,
-        limit:    entry.chapter.limit,
-        path:     entry.chapter.path,
-        scale:    1,
-        focus:    true, // TODO review the purpose
-        page:     entry.pageNumber
-      });
+      if ( documentModel.epaperDesigner ) {
+        response = await this._socket.loadDocument({
+          id:       entry.serverId,
+          path:     entry.chapter.path,
+          scale:    1
+        });
+
+      } else {
+        response = await this._socket.loadDocument({
+          id:       entry.serverId,
+          editable: entry.chapter.editable,
+          limit:    entry.chapter.limit,
+          path:     entry.chapter.path,
+          scale:    1,
+          focus:    true, // TODO review the purpose
+          page:     entry.pageNumber
+        });
+      }
 
       if ( response.errors !== undefined ) {
         //this.__clear();
@@ -555,6 +574,9 @@ class CasperEpaperLit extends LitElement {
   }
 
   async _getPageHints () {
+    if ( ! this._document ) {
+      return;
+    }
     const tits = await this._socket.getPageHints(this._document.serverId);
     // TODO confirm page and document ID
     this._page.renderSvgTooltips(tits);
