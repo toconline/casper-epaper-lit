@@ -9,6 +9,7 @@
 
 import { html, css, LitElement } from 'lit';
 import '@cloudware-casper/casper-timed-status/casper-timed-status.js';
+import { CasperSocket } from '@cloudware-casper/casper-socket/casper-socket.js'; // TODO remove this do a propor socket managemnet
 import './casper-epaper-page.js'
 
 class CasperEpaperLit extends LitElement {
@@ -417,7 +418,15 @@ class CasperEpaperLit extends LitElement {
           this._socket.keepAlive();
         }, 120 * 1000); // HACK FOR OCC CONGRESS
       } else if ( documentModel.epaperDesigner ) { // # TODO a clean api o app to get the proper socket
-        this._socket = app.socket2designer;
+        this._socket = new CasperSocket(); // TODO clear all this mess with a casper-socket revamp
+        this._socket.webSocketProtocol = 'casper-epaper-designer';
+        this._socket._webSocketProtocol = 'casper-epaper-designer';
+        this._socket.path = 'epaper2';
+        this._socket._path = 'epaper2';
+        this._socket._version = 2.0;
+        this._socket.secondary = true;
+        this._socket._initData();
+        await this._socket._setSessionAsync(app.socket.sessionCookie);
         clearInterval(this._pigTimer);
         this._pigTimer = setInterval((e) => {
           this._socket.keepAlive();
