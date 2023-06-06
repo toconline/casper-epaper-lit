@@ -418,15 +418,21 @@ class CasperEpaperLit extends LitElement {
           this._socket.keepAlive();
         }, 120 * 1000); // HACK FOR OCC CONGRESS
       } else if ( documentModel.epaperDesigner ) { // # TODO a clean api o app to get the proper socket
-        this._socket = new CasperSocket(); // TODO clear all this mess with a casper-socket revamp
-        this._socket.webSocketProtocol = 'casper-epaper-designer';
-        this._socket._webSocketProtocol = 'casper-epaper-designer';
-        this._socket.path = 'epaper2';
-        this._socket._path = 'epaper2';
-        this._socket._version = 2.0;
-        this._socket.secondary = true;
-        this._socket._initData();
-        await this._socket._setSessionAsync(app.socket.sessionCookie);
+        // TODO clear all this mess with a casper-socket revamp
+        if ( app.designerSocket ) {
+          this._socket = app.designerSocket;
+        } else {
+          this._socket = new CasperSocket();
+          this._socket.webSocketProtocol = 'casper-epaper-designer';
+          this._socket._webSocketProtocol = 'casper-epaper-designer';
+          this._socket.path = 'epaper2';
+          this._socket._path = 'epaper2';
+          this._socket._version = 2.0;
+          this._socket.secondary = true;
+          this._socket._initData();
+          await this._socket._setSessionAsync(app.socket.sessionCookie);
+          app.designerSocket = this._socket;
+        }
         clearInterval(this._pigTimer);
         this._pigTimer = setInterval((e) => {
           this._socket.keepAlive();
@@ -537,6 +543,7 @@ class CasperEpaperLit extends LitElement {
       serverId:       undefined,
       width:          undefined,
       height:         undefined,
+      epaperDesigner: document.epaperDesigner,
     }
 
     // ... ensure the model chapters have sane defaults ...
@@ -583,7 +590,7 @@ class CasperEpaperLit extends LitElement {
   }
 
   async _getPageHints () {
-    if ( ! this._document ) {
+    if ( ! this._document || this._document.epaperDesigner ) {
       return;
     }
     const tits = await this._socket.getPageHints(this._document.serverId);
@@ -669,22 +676,34 @@ class CasperEpaperLit extends LitElement {
   }
 
   async _pageClick (event) {
-
-    for (const elem of event.composedPath()) {
-      if ( elem.classList && elem.classList.contains('epaper-link') ) {
-        // TODO use CTM inverse?  +fro SVG relative coordinates ?
-        const rect = this._page.getBoundingClientRect();
-        const link = await this._socket.getLink(
+    if ( this._document.chapter.editable ) {
+      try {
+        await this._socket.sendClick(
           this._document.serverId,
-          (event.pageX - rect.left) / this.zoom,
-          (event.pageY - rect.top)  / this.zoom
+          parseFloat(event.offsetX.toFixed(2)),
+          parseFloat(event.offsetY.toFixed(2))
         );
-        const idx = link.handler.lastIndexOf('/') + 1;
-        const module = await import(`${link.handler.slice(0,idx)}${app.digest ? `${app.digest}.` : ''}${link.handler.slice(idx)}`);
-        await this.pushEpaper(await module.link_handler(link, this._document));
-        break;
-      } else if ( elem.classList && elem.classList.contains('tab') ) {
-        this._handleTabClick(elem);
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      //  ... handle links ...
+      for (const elem of event.composedPath()) {
+        if ( elem.classList && elem.classList.contains('epaper-link') ) {
+            // TODO use CTM inverse?  +fro SVG relative coordinates ?
+            const rect = this._page.getBoundingClientRect();
+            const link = await this._socket.getLink(
+              this._document.serverId,
+              (event.pageX - rect.left) / this.zoom,
+              (event.pageY - rect.top)  / this.zoom
+            );
+            const idx = link.handler.lastIndexOf('/') + 1;
+            const module = await import(`${link.handler.slice(0,idx)}${app.digest ? `${app.digest}.` : ''}${link.handler.slice(idx)}`);
+            await this.pushEpaper(await module.link_handler(link, this._document));
+            break;
+        } else if ( elem.classList && elem.classList.contains('tab') ) {
+          this._handleTabClick(elem);
+        }
       }
     }
   }
