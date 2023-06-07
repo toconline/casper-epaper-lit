@@ -425,8 +425,8 @@ class CasperEpaperLit extends LitElement {
           this._socket = new CasperSocket();
           this._socket.webSocketProtocol = 'casper-epaper-designer';
           this._socket._webSocketProtocol = 'casper-epaper-designer';
-          this._socket.path = 'epaper2';
-          this._socket._path = 'epaper2';
+          this._socket.path = 'epaper-designer';
+          this._socket._path = 'epaper-designer';
           this._socket._version = 2.0;
           this._socket.secondary = true;
           this._socket._initData();
