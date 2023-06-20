@@ -209,15 +209,15 @@ export class EpaperSvgRenderer extends EpaperRenderer {
         break;
       case 'R':
         this._updateShapeProps(p);
-        if ( !!p.r ) {
-          console.warn("we have a roundie");
-        }
         const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         r.setAttribute('x', p.x);
         r.setAttribute('y', p.y);
         r.setAttribute('width', p.w);
         r.setAttribute('height', p.h);
         r.setAttribute('style', this._currentShapeStyle);
+        if ( p.r ) {
+            r.setAttribute('rx', p.r);
+        }        
         this._bg.appendChild(r);
         break;
       case 'I':
