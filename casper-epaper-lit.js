@@ -262,7 +262,12 @@ class CasperEpaperLit extends LitElement {
   render () {
 
     return html`
-      <div class="background" @click="${(e) => this._pageClick(e)}" @mousemove="${(e) => this._mouseMove(e)}">
+      <div class="background" tabindex="0"
+        @keydown=${(e) => this._onKeyDown(e)}
+        @keyup=${(e)   => this._onKeyUp(e)}
+        @input=${(e)   => this._onInput(e)}
+        @paste=${(e)   => this._paste(e)}
+        @click="${(e) => this._pageClick(e)}" @mousemove="${(e) => this._mouseMove(e)}">
         <casper-epaper-page id="back">
         </casper-epaper-page>
         <casper-epaper-page id="page">
@@ -382,7 +387,7 @@ class CasperEpaperLit extends LitElement {
             tab.classList.add('tab-slide');
           }
         }, 100
-      );  
+      );
     }
   }
 
@@ -802,6 +807,45 @@ class CasperEpaperLit extends LitElement {
     console.log(event);
     this._hideOverlay();
   }
+
+  async _onKeyDown (event) {
+    console.log(event);
+    // TODO prevent default? TODO prevent command overuns with queue
+    if ( this._document.chapter.editable ) {
+      switch (event.key) {
+        case 'ArrowUp':
+          await this._socket.moveCursor(this._document.serverId, 'up');
+          break;
+        case 'ArrowDown':
+          await this._socket.moveCursor(this._document.serverId, 'down');
+          break;
+        case 'ArrowLeft':
+          await this._socket.moveCursor(this._document.serverId, 'left');
+          break;
+        case 'ArrowRight':
+          await this._socket.moveCursor(this._document.serverId, 'right');
+          break;
+        case 'Tab':
+          event.preventDefault();
+          await this._socket.moveCursor(this._document.serverId, event.shiftKey ? 'left' : 'right');
+          break;
+      }
+    }
+  }
+
+  _onKeyUp (event) {
+    console.log(event);
+  }
+
+  // ??? needed no
+  _onInput (event) {
+    console.log(event);
+  }
+
+  _onPaste (event) {
+    console.log(event);
+  }
+
 }
 
 customElements.define('casper-epaper-lit', CasperEpaperLit);
