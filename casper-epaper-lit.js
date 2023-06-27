@@ -846,6 +846,36 @@ class CasperEpaperLit extends LitElement {
     console.log(event);
   }
 
+  // ported from casper-epaper todo review a lot
+  async _attachEditorWidget (binding) {
+    if ( this._widget ) {
+      this._widget.detach();
+      this._widget.setVisible(false);
+    }
+
+    const tag    = binding?.binding?.widget?.tag || 'casper-epaper-text-widget';
+    this._widget = this._widgetCache.get(tag);
+    if ( ! this._widget ) {
+      try {
+        await import(`./${tag}.js`); // TODO app hash for correct resolve
+        this._widget = document.createElement(tag);
+        this.shadowRoot.appendChild(this._widget);
+        this._widgetCache.set(tag, this._widget);
+        this._widget.epaper = this;
+      } catch (error) {
+        alert(error);
+        this._widget = undefined; // TODO some sort of error widget
+      }
+    }
+    this._adjustBinding(binding);
+
+    // TODO only call attach
+    this._widget.attach(binding);
+    this._widget.setVisible(true);
+    this._widget.grabFocus();
+    this._widget.requestUpdate();
+  }
+
 }
 
 customElements.define('casper-epaper-lit', CasperEpaperLit);
