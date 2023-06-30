@@ -128,6 +128,16 @@ class CasperEpaperPage extends LitElement {
 
   }
 
+  toServerCoordinates (event) {
+    let p = new DOMPoint();
+    p.x = Math.floor(event.clientX);
+    p.y = Math.floor(event.clientY);
+    if ( this._svg ) {
+      p = p.matrixTransform(this._svg.getScreenCTM().inverse());
+    }
+    return p;
+  }
+
   mouseMove (event) {
     if ( this._svg ) {
       // ... transform screen coordinates to SVG coordinates ...

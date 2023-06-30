@@ -688,10 +688,11 @@ class CasperEpaperLit extends LitElement {
   async _pageClick (event) {
     if ( this._document.chapter.editable ) {
       try {
+        let p = this._page.toServerCoordinates(event);
         await this._socket.sendClick(
           this._document.serverId,
-          parseFloat(event.offsetX.toFixed(2)),
-          parseFloat(event.offsetY.toFixed(2))
+          parseFloat(p.x.toFixed(2)),
+          parseFloat(p.y.toFixed(2))
         );
       } catch (e) {
         console.log(e);
@@ -867,11 +868,10 @@ class CasperEpaperLit extends LitElement {
     if ( ! this._widget ) {
       await import(`./${tag}.js`); // TODO app hash for correct resolve
       this._widget = document.createElement(tag);
-      this._page.shadowRoot.appendChild(this._widget);
       this._widgetCache.set(tag, this._widget);
       this._widget.epaper = this;
     }
-
+    this._page.shadowRoot.appendChild(this._widget);
     this._widget.attach(binding.s);
   }
 
