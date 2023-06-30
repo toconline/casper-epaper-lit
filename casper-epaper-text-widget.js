@@ -19,16 +19,8 @@
  */
 import { css, html } from 'lit';
 import { CasperEpaperWidget } from './casper-epaper-widget.js';
-import { CasperEpaperServerDocument } from './casper-epaper-server-document.js';
-
 
 export class CasperEpaperTextWidget extends CasperEpaperWidget {
-  
-  constructor () {
-    super();
-  }
-
-
 
   static styles = css`
     :host {
@@ -51,8 +43,10 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
     .overlay-icon[overlay=open] {
       transform: rotate(-180deg);
     }
-    
+
     input {
+      position: relative;
+      font-size: 19px;
       height: 100%;
       width: 100%;
       padding: 0px;
@@ -63,6 +57,11 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
       background-color: transparent !important;
     }`;
 
+  attach (binding) {
+    this._value = binding.p.dv;
+    super.attach(binding);
+  }
+
   render () {
     return html`<input id="textarea" tabindex="1" autocomplete="off"></input>`;
   }
@@ -72,18 +71,20 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   }
 
   updated () {
-     // TODO can I do this tru style in a more litish way
-    this.alignPosition(this._binding.x, this._binding.y, this._binding.w, this._binding.h);
-    this._textArea.style.fontFamily = this._binding.font; 
-    this._textArea.style.fontSize   = this._binding.fs / this._binding.ratio + 'px'; 
-    this._textArea.style.color      = this._binding.fc;  
+    this._textArea.style.fontFamily = this._binding.p.fn; 
+    this._textArea.style.fontSize   = this._binding.p.fs + 'px'; // fs / this._binding.ratio + 'px'; 
+    //this._textArea.style.color      = this._binding.fc;  
+    // TODO BOLD/ITALIC
 
-    console.warn('todo limit max size of overlay icon!!!');
-
-    this._textArea.value = this._binding.t;
-    this._textArea.selectionStart = 0;
-    this._textArea.selectionEnd = this._binding.t.length;
-    this._initialSelection = true;
+    if ( this._value ) {
+      this._textArea.value = this._value;
+      this._textArea.selectionStart = 0;
+      this._textArea.selectionEnd = this._value.length;
+      this._initialSelection = true;
+    } else {
+      this._textArea.value = '';
+      this._initialSelection = false;
+    }
   }
 
   _onKeyDown (event) {
@@ -149,40 +150,6 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   /*                                                                                       */
   /*****************************************************************************************/
 
-  /**
-   * Called when the server updates the tooltip, passes the bounding box and text
-   *
-   * If the mid point of the server bounding box is not inside the current input bounds discard the update, this
-   * test discards tooltip updates that came too late and are no longer related to the focused field
-   *
-   * @param left leftmost corner of server's field bounding box
-   * @param top upper corner of server's field bounding box
-   * @param width of the server's field bounding box
-   * @param height of the server's field bounding box
-   * @param content the new tooltip content
-   */
-  serverTooltipUpdate (left, top, width, height, content) {
-
-    if ( this._textArea === undefined ) {
-      return; // TODO
-    }
-    const bbc   = this.epaper._canvas.getBoundingClientRect();
-    const bbi   = this._textArea.getBoundingClientRect();
-    const mid_x = bbc.left + left + width / 2;
-    const mid_y = bbc.top + top + height / 2;
-
-    // ... if the mid point of the tooltip hint is outside the editor bounding box discard it ...
-    if (mid_x < bbi.left || mid_x > bbi.right || mid_y < bbi.top || mid_y > bbi.bottom) {
-      return;
-    }
-    if (content.length) {
-      //console.log('Show tooltip:', content); // TODO port to casper-app
-      //this.epaper.$.tooltip.show(content); // TODO port to casper-app
-    } else {
-      this.hideTooltip();
-    }
-  }
-  
 }
 
 window.customElements.define('casper-epaper-text-widget', CasperEpaperTextWidget);

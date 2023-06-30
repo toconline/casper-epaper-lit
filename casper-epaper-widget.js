@@ -1,5 +1,5 @@
 /*
-  - Copyright (c) 2014-2019 Cloudware S.A. All rights reserved.
+  - Copyright (c) 2014-2023 Cloudware S.A. All rights reserved.
   -
   - This file is part of casper-epaper.
   -
@@ -32,64 +32,44 @@ export class CasperEpaperWidget extends LitElement {
       overlay: {
         type: String,
         reflect: true
-      }
+      } 
     };
   }
 
   constructor () {
     super();
     this.overlay  = 'closed'; 
-    this._binding = undefined; // or a prop called binding
-    this._tag     = undefined;
-    this.addEventListener('keypress', e => this._onKeypress(e));
-    this.addEventListener('keydown', e => this._onKeyDown(e));
+    this._binding = undefined;
+    this._visible = false;
+    //this.addEventListener('keypress', e => this._onKeypress(e));
+    //this.addEventListener('keydown', e => this._onKeyDown(e));
     //this.addEventListener('tap', e => this._onTap(e));
   }
 
   attach (binding) {
-    //console.log("+++ attach ", this.tagName);
     this._binding = binding;
+    this.position();
+    this.style.display = 'flex';
+    this.requestUpdate();
   }
 
   detach () {
+    this.style.display = 'none';
+    // no meed to updayte invisble sheet this.requestUpdate();
     if ( this.overlay === 'open' ) {
       this._overlay.hidePopover();
       this.overlay = 'closed';
     }
-    //console.log("--- detach ", this.tagName);
   }
 
-  /**
-   * Show or hide the input control
-   *
-   * @param {boolean} visible
-   */
-  setVisible (visible) {
-    if (this._visible !== visible) {
-      if (visible) {
-        this.style.display = 'flex';
-      } else {
-        this.style.display = 'none';
-      }
-      this._visible = visible;
-    }
-    // TODO requestUpdate();
-  }
-
-  /**
-   * Position and size the input overlay on top the editable element
-   *
-   * @param {number} x Upper left corner (x)
-   * @param {number} y Upper left corner (y)
-   * @param {number} w box width in px
-   * @param {number} h box height in px
-   */
-  alignPosition (x, y, w, h) {
-    // can we do this in a more litish way ?
-    this.style.left = x + 'px';
-    this.style.top = y + 'px';
-    this.style.width = w + 'px';
-    this.style.height = h + 'px';
+  position () {
+    const zoom = this.epaper.zoom;
+    this.style.left = '0px';
+    this.style.top  = '0px';
+    this.style.width = this._binding.p.w + 'px';
+    this.style.height = this._binding.p.h + 'px';
+    this.style.transformOrigin = 'top left';
+    this.style.transform = `scale(${zoom}) translate(${this._binding.p.x}px,${this._binding.p.y}px)`;
   }
 
   _toogleOverlay (event) {
@@ -110,10 +90,6 @@ export class CasperEpaperWidget extends LitElement {
     //this.$.date.setVisible(false);
     if (hideButtons) {
     }
-  }
-
-  setCasperBinding (binding) {
-    // this will most likely die to (painfull death)
   }
 
   /*****************************************************************************************/
@@ -206,92 +182,4 @@ export class CasperEpaperWidget extends LitElement {
     }
     return null;
   }
-
-  /*****************************************************************************************/
-  /*                                                                                       */
-  /*                            ~~~ Tooltip management ~~~                                 */
-  /*                                                                                       */
-  /*****************************************************************************************/
-
-  /**
-   * Called when the server updates the tooltip, passes the bounding box and text
-   *
-   * If the mid point of the server bounding box is not inside the current input bounds discard the update, this
-   * test discards tooltip updates that came too late and are no longer related to the focused field
-   *
-   * @param left leftmost corner of server's field bounding box
-   * @param top upper corner of server's field bounding box
-   * @param width of the server's field bounding box
-   * @param height of the server's field bounding box
-   * @param content the new tooltip content
-   */
-  serverTooltipUpdate (left, top, width, height, content) {
-    let mid_x, mid_y, bbi, bbc;
-
-    bbc = this.epaper.__canvas.getBoundingClientRect();
-    if ( this._textArea === undefined ) {
-      return; // TODO
-    }
-    bbi = this._textArea.getBoundingClientRect();
-    mid_x = bbc.left + left + width / 2;
-    mid_y = bbc.top + top + height / 2;
-
-    // ... if the mid point of the tooltip hint is outside the editor bounding box discard it ...
-    if (mid_x < bbi.left || mid_x > bbi.right || mid_y < bbi.top || mid_y > bbi.bottom) {
-      return;
-    } 
-    if (content.length) {
-      console.log('Show tooltip:', content); // TODO port to casper-app
-      //this.epaper.$.tooltip.show(content); // TODO port to casper-app
-    } else {
-      this.hideTooltip();
-    }
-  }
-
-  /*****************************************************************************************/
-  /*                                                                                       */
-  /*                            ~~~ Tooltip management ~~~                                 */
-  /*                                                                                       */
-  /*****************************************************************************************/
-
-  /**
-   * Called when the server updates the tooltip, passes the bounding box and text
-   *
-   * If the mid point of the server bounding box is not inside the current input bounds discard the update, this
-   * test discards tooltip updates that came too late and are no longer related to the focused field
-   *
-   * @param left leftmost corner of server's field bounding box
-   * @param top upper corner of server's field bounding box
-   * @param width of the server's field bounding box
-   * @param height of the server's field bounding box
-   * @param content the new tooltip content
-   */
-  serverTooltipUpdate (left, top, width, height, content) {
-
-  }
-
-  showTooltip (content, positionTarget) {
-    // TODO remove hard coded app
-    const prect = this.epaper.getBoundingClientRect();
-    window.app.tooltip.show(content, {
-      height: positionTarget.height,
-      left: positionTarget.left + prect.left,
-      top: positionTarget.top + prect.top,
-      width: positionTarget.width
-    });
-  }
-
-  hideTooltip () {
-    // TODO port to casper-app
-    //window.app.tooltip.hide();
-    //if (this.epaper.$.tooltip.hide !== undefined) {
-    //  this.epaper.$.tooltip.hide();
-    //}
-    // [AG] - don't know why the above code is disabled - but epaper v2 needs this
-    if ( 2.0 === this.epaper._socket._version ) {
-      window.app.tooltip.hide();
-    }
-  }
 }
-
-//window.customElements.define('casper-epaper-widget', CasperEpaperWidget);

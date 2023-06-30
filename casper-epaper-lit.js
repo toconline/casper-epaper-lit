@@ -189,8 +189,10 @@ class CasperEpaperLit extends LitElement {
     this.zoom = 1;
     this._pageWidth  = 595;
     this._pageHeight = 842;
+    this._widgetCache = new Map();
     this._currentDetail = undefined; // TODO void this when document is redrawn
     window.pig = this; // TODO remove!!!
+
   }
 
   async openAttachment (attachment, attachmentIndex, controlButtonsOptions = {}) {
@@ -338,6 +340,7 @@ class CasperEpaperLit extends LitElement {
   async _zoomOut () {
     if ( this.zoom > this.MIN_ZOOM ) {
       this.zoom *= 0.8;
+      this._updateWidgets();
     }
   }
 
@@ -347,6 +350,7 @@ class CasperEpaperLit extends LitElement {
   async _zoomIn () {
     if ( this.zoom < this.MAX_ZOOM ) {
       this.zoom *= 1.2;
+      this._updateWidgets();
     }
   }
 
@@ -584,9 +588,8 @@ class CasperEpaperLit extends LitElement {
         this._debounceTooltip = setTimeout((e) => this._getPageHints(), 200);
         break;
       case 'F': // focus
-        const focus = JSON.parse(message.substring(2, message.length));
-        console.log(focus)
-        this._page.renderFocusAsSvg(focus);
+        this._attachEditorWidget(JSON.parse(message.substring(2, message.length)));
+        //this._page.renderFocusAsSvg(focus);
         break;
       case 'D': // Ignore V1 protocol (aka "gerber") drawing orders
         break;
@@ -850,34 +853,31 @@ class CasperEpaperLit extends LitElement {
 
   // ported from casper-epaper todo review a lot
   async _attachEditorWidget (binding) {
-    if ( this._widget ) {
-      this._widget.detach();
-      this._widget.setVisible(false);
+
+    // move up ?
+    if ( ! binding.s ) {
+      if ( this._widget ) {
+        this._widget.detach();
+      }
+      return;
     }
 
-    const tag    = binding?.binding?.widget?.tag || 'casper-epaper-text-widget';
+    const tag = /*binding.s.editable.widget.component ||*/ 'casper-epaper-text-widget';
     this._widget = this._widgetCache.get(tag);
     if ( ! this._widget ) {
-      try {
-        await import(`./${tag}.js`); // TODO app hash for correct resolve
-        this._widget = document.createElement(tag);
-        this.shadowRoot.appendChild(this._widget);
-        this._widgetCache.set(tag, this._widget);
-        this._widget.epaper = this;
-      } catch (error) {
-        alert(error);
-        this._widget = undefined; // TODO some sort of error widget
-      }
+      await import(`./${tag}.js`); // TODO app hash for correct resolve
+      this._widget = document.createElement(tag);
+      this._page.shadowRoot.appendChild(this._widget);
+      this._widgetCache.set(tag, this._widget);
+      this._widget.epaper = this;
     }
-    this._adjustBinding(binding);
 
-    // TODO only call attach
-    this._widget.attach(binding);
-    this._widget.setVisible(true);
-    this._widget.grabFocus();
-    this._widget.requestUpdate();
+    this._widget.attach(binding.s);
   }
 
+  _updateWidgets () {
+    this._widget?.position();
+  }
 }
 
 customElements.define('casper-epaper-lit', CasperEpaperLit);
