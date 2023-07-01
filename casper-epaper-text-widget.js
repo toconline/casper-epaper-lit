@@ -46,7 +46,6 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
 
     input {
       position: relative;
-      font-size: 19px;
       height: 100%;
       width: 100%;
       padding: 0px;
@@ -63,7 +62,7 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   }
 
   render () {
-    return html`<input id="textarea" tabindex="1" autocomplete="off"></input>`;
+    return html`<input id="textarea" autocomplete="off"></input>`;
   }
 
   firstUpdated () {

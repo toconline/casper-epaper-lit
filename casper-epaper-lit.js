@@ -150,12 +150,6 @@ class CasperEpaperLit extends LitElement {
       height: 120px;
       flex-shrink: 0;
       --casper-timed-status-countdown-color: var(--primary-color);
-      /*--casper-timed-status-ring-color: var(--primary-color);
-      --casper-timed-status-progress-color: var(--izibizi-primary-color);
-      --casper-timed-status-icon: /static/icons/millennium;
-      --casper-timed-status-icon-check: /static/icons/check;
-      --casper-timed-status-icon-error: /static/icons/error;
-      --casper-timed-status-icon-timeout: /static/icons/timeout;*/
     }
 
     .overlay h2 {
