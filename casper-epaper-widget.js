@@ -32,7 +32,7 @@ export class CasperEpaperWidget extends LitElement {
       overlay: {
         type: String,
         reflect: true
-      } 
+      }
     };
   }
 
@@ -46,11 +46,13 @@ export class CasperEpaperWidget extends LitElement {
     //this.addEventListener('tap', e => this._onTap(e));
   }
 
-  attach (binding) {
+  async attach (binding) {
     this._binding = binding;
     this.position();
     this.style.display = 'flex';
     this.requestUpdate();
+    await this.updateComplete;
+    this.grabFocus();
   }
 
   detach () {

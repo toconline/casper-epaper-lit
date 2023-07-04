@@ -62,17 +62,26 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   }
 
   render () {
-    return html`<input id="textarea" autocomplete="off"></input>`;
+    return html`<input id="textarea" autocomplete="off" 
+      @keydown=${(e) => this._keyDown(e)}
+      @keyup=${(e) => this._keyUp(e)}
+      @click=${(e) => this._click(e)}></input>`;
   }
+
+  /*
+    @keyup=${(e)   => this._onKeyUp(e)}
+    @input=${(e)   => this._onInput(e)}
+    @paste=${(e)   => this._paste(e)
+  */
 
   firstUpdated () {
     this._textArea = this.renderRoot.getElementById('textarea');
   }
 
   updated () {
-    this._textArea.style.fontFamily = this._binding.p.fn; 
-    this._textArea.style.fontSize   = this._binding.p.fs + 'px'; // fs / this._binding.ratio + 'px'; 
-    //this._textArea.style.color      = this._binding.fc;  
+    this._textArea.style.fontFamily = this._binding.p.fn;
+    this._textArea.style.fontSize   = this._binding.p.fs + 'px'; // fs / this._binding.ratio + 'px';
+    //this._textArea.style.color      = this._binding.fc;
     // TODO BOLD/ITALIC
 
     if ( this._value ) {
@@ -86,26 +95,28 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
     }
   }
 
-  _onKeyDown (event) {
+  async _keyDown (event) {
     const vkey = this._keycodeToVkey(event);
 
     if (this._initialSelection === true || this._textArea.value.length === 0) {
       if (['down', 'up', 'left', 'right'].indexOf(vkey) > -1) {
+        event.stopPropagation();
+        event.preventDefault();
         if ( this.overlay === 'open' && ['down', 'up'].includes(vkey) ) {
           return;
         }
-        this.epaper._socket.moveCursor(this.epaper.documentId, vkey);
-        event.preventDefault();
+        await this.epaper.moveCursor(vkey);
         return;
       } else if (['tab', 'shift+tab'].indexOf(vkey) > -1) {
         if (this._initialSelection === true) {
+          event.stopPropagation();
+          event.preventDefault();
           this._initialSelection = false;
           if (vkey === 'shift+tab') {
-            this.epaper._socket.sendKey(this.epaper.documentId, 'tab', 'shift');
+            await this.epaper._socket.sendKey(this.epaper._document.serverId, 'tab', 'shift');
           } else {
-            this.epaper._socket.sendKey(this.epaper.documentId, vkey);
+            await this.epaper._socket.sendKey(this.epaper._document.serverId, vkey);
           }
-          event.preventDefault();
           return;
         }
       } else if (['enter', 'F2'].indexOf(vkey) > -1) {
@@ -113,6 +124,7 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
         this._textArea.selectionEnd = this._textArea.value.length;
         if (this._initialSelection === true || vkey === 'F2') {
           this._initialSelection = false;
+          event.stopPropagation();
           event.preventDefault();
           return;
         }
@@ -122,16 +134,26 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
     }
 
     if (['enter', 'tab', 'shift+tab'].indexOf(vkey) > -1) {
-      this.epaper._socket.setText(this.epaper.documentId,
-        this._textArea.value,
-        vkey === 'shift+tab' ? 'left' : 'right');
-      // this._setTextResponse.bind(this)); TODO WE HAVE A PROMISE NOW
+      event.stopPropagation();
       event.preventDefault();
+      await this.epaper.setValue(this._textArea.value, vkey);
       return;
     }
+
+    event.stopPropagation();
   }
 
+  _keyUp (event) {
+    //const vkey = this._keycodeToVkey(event);
+    //console.log(`UP ${vkey}`);
+    event.stopPropagation();
+  }
 
+  _click (event) {
+    //console.log('CLICK');
+    event.stopPropagation();
+    this._initialSelection = false;
+  }
 
   grabFocus () {
     if ( this._textArea ) {
@@ -145,7 +167,7 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
 
   /*****************************************************************************************/
   /*                                                                                       */
-  /*                            ~~~ Tooltip management ~~~                                 */
+  /*                            ~~~ XXXXX XXXXX XXXXXZ ~~~                                 */
   /*                                                                                       */
   /*****************************************************************************************/
 

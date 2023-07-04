@@ -237,6 +237,40 @@ class CasperEpaperLit extends LitElement {
     }*/
   }
 
+  async moveCursor (vkey) {
+    try {
+      // spinner ??
+      // await promise
+      return await this._socket.moveCursor(this._document.serverId, vkey);
+    } catch (error) {
+      this._showToast(error);
+      return undefined;
+    }
+  }
+
+  async setValue (value, vkey) {
+    try {
+      // spinner ??
+      // await promise
+      return await this._socket.setText(this._document.serverId, value, vkey === 'shift+tab' ? 'left' : 'right');
+    } catch (error) {
+      this._showToast(error);
+      return undefined;
+    }
+  }
+
+  _showToast (error) {
+    console.log(error);
+    let message = error?.payload_errors[0].detail;
+      // TODO don't move focus on error
+      // show error on spinner instead ??
+    app.openToast({
+      duration: '4000',
+      text: message || 'Ocorreu um erro inesperado, por favor tente mais tarde.',
+      backgroundColor: 'var(--error-color)'
+    });
+  }
+
   //***************************************************************************************//
   //                                ~~~ LIT life cycle ~~~                                 //
   //***************************************************************************************//
@@ -263,7 +297,7 @@ class CasperEpaperLit extends LitElement {
         @keyup=${(e)   => this._onKeyUp(e)}
         @input=${(e)   => this._onInput(e)}
         @paste=${(e)   => this._paste(e)}
-        @click="${(e) => this._pageClick(e)}" @mousemove="${(e) => this._mouseMove(e)}">
+        @click="${(e) => this._click(e)}" @mousemove="${(e) => this._mouseMove(e)}">
         <casper-epaper-page id="back">
         </casper-epaper-page>
         <casper-epaper-page id="page">
@@ -293,6 +327,7 @@ class CasperEpaperLit extends LitElement {
 
   firstUpdated (changedProperties) {
     this._page = this.shadowRoot.getElementById('page');
+    this._page.epaper = this;
     this._page.style.width  = this._pageWidth  * this.zoom + 'px';
     this._page.style.height = this._pageHeight * this.zoom + 'px';
     this._back = this.shadowRoot.getElementById('back');
@@ -679,35 +714,33 @@ class CasperEpaperLit extends LitElement {
     }
   }
 
-  async _pageClick (event) {
-    if ( this._document.chapter.editable ) {
-      try {
-        let p = this._page.toServerCoordinates(event);
-        await this._socket.sendClick(
+  async _click (event) {
+    for (const elem of event.composedPath()) {
+      if ( elem.classList && elem.classList.contains('epaper-link') ) {
+        //  ... handle links ...
+        // TODO use CTM inverse?  +fro SVG relative coordinates ?
+        const rect = this._page.getBoundingClientRect();
+        const link = await this._socket.getLink(
           this._document.serverId,
-          parseFloat(p.x.toFixed(2)),
-          parseFloat(p.y.toFixed(2))
+          (event.pageX - rect.left) / this.zoom,
+          (event.pageY - rect.top)  / this.zoom
         );
-      } catch (e) {
-        console.log(e);
-      }
-    } else {
-      //  ... handle links ...
-      for (const elem of event.composedPath()) {
-        if ( elem.classList && elem.classList.contains('epaper-link') ) {
-            // TODO use CTM inverse?  +fro SVG relative coordinates ?
-            const rect = this._page.getBoundingClientRect();
-            const link = await this._socket.getLink(
-              this._document.serverId,
-              (event.pageX - rect.left) / this.zoom,
-              (event.pageY - rect.top)  / this.zoom
-            );
-            const idx = link.handler.lastIndexOf('/') + 1;
-            const module = await import(`${link.handler.slice(0,idx)}${app.digest ? `${app.digest}.` : ''}${link.handler.slice(idx)}`);
-            await this.pushEpaper(await module.link_handler(link, this._document));
-            break;
-        } else if ( elem.classList && elem.classList.contains('tab') ) {
-          this._handleTabClick(elem);
+        const idx = link.handler.lastIndexOf('/') + 1;
+        const module = await import(`${link.handler.slice(0,idx)}${app.digest ? `${app.digest}.` : ''}${link.handler.slice(idx)}`);
+        await this.pushEpaper(await module.link_handler(link, this._document));
+        break;
+      } else if ( elem.classList && elem.classList.contains('tab') ) {
+        this._handleTabClick(elem);
+      } else {
+        try {
+          let p = this._page.toServerCoordinates(event);
+          await this._socket.sendClick(
+            this._document.serverId,
+            parseFloat(p.x.toFixed(2)),
+            parseFloat(p.y.toFixed(2))
+          );
+        } catch (e) {
+          console.log(e);
         }
       }
     }
@@ -814,20 +847,20 @@ class CasperEpaperLit extends LitElement {
     if ( this._document.chapter.editable ) {
       switch (event.key) {
         case 'ArrowUp':
-          await this._socket.moveCursor(this._document.serverId, 'up');
+          await this.moveCursor('up');
           break;
         case 'ArrowDown':
-          await this._socket.moveCursor(this._document.serverId, 'down');
+          await this.moveCursor('down');
           break;
         case 'ArrowLeft':
-          await this._socket.moveCursor(this._document.serverId, 'left');
+          await this.moveCursor('left');
           break;
         case 'ArrowRight':
-          await this._socket.moveCursor(this._document.serverId, 'right');
+          await this.moveCursor('right');
           break;
         case 'Tab':
           event.preventDefault();
-          await this._socket.moveCursor(this._document.serverId, event.shiftKey ? 'left' : 'right');
+          await this.moveCursor(event.shiftKey ? 'left' : 'right');
           break;
       }
     }
