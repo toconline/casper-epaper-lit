@@ -75,6 +75,27 @@ class CasperEpaperPage extends LitElement {
       font-size: 8pt;
     }
 
+    .context-menu {
+      display: none;
+      position: absolute;
+      top: 0;
+    }
+
+    .line-menu-button {
+      padding: 6px;
+      margin-left: 4px;
+      max-width: 28px;
+      max-height: 28px;
+      border-radius: 50%;
+      -webkit-box-shadow: 0px 1px 6px -1px rgba(0, 0, 0, 0.61);
+      -moz-box-shadow:    0px 1px 6px -1px rgba(0, 0, 0, 0.61);
+      box-shadow:         0px 1px 6px -1px rgba(0, 0, 0, 0.61);
+    }
+
+    .delete {
+      --casper-icon-button-color: white;
+      --casper-icon-button-background-color: var(--status-red);
+    }
   `;
 
   constructor () {
@@ -91,6 +112,10 @@ class CasperEpaperPage extends LitElement {
     return html`
       <svg id="svg" class="epaper-svg">
       </svg>
+      <div id="context-menu" class="context-menu">
+        <casper-icon-button icon="fa-light:plus"      class="line-menu-button"        @click="${(e) => this.epaper.addDocumentLine(e, this._currentDetail)}"></casper-icon-button>
+        <casper-icon-button icon="fa-light:trash-alt" class="line-menu-button delete" @click="${(e) => this.epaper.removeDocumentLine(e, this._currentDetail)}"></casper-icon-button>
+      </div>
     `;
   }
 
@@ -100,32 +125,24 @@ class CasperEpaperPage extends LitElement {
     } else {
       this._styleSheet = this.shadowRoot.styleSheets[0];
     }
+    this._contextMenu = this.shadowRoot.getElementById('context-menu');
+    this._svg = this.shadowRoot.querySelector('svg');
   }
 
   renderAsSvg (page, zoom) {
     this._bands = [];
-    this.shadowRoot.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet, this._bands));
+    this._svg.replaceChildren(CasperEpaperPage.svgRenderer.renderPage(page, this._styleSheet, this._bands));
     this.style.width  = page.p.w * zoom + 'px';
     this.style.height = page.p.h * zoom + 'px';
-    this._svg = this.shadowRoot.querySelector('svg');
+    //this._svg = this.shadowRoot.querySelector('svg');
   }
 
   renderSvgTooltips (tooltips) {
     if ( this._svg  ) {
       const group = CasperEpaperPage.svgRenderer.renderTooltips(this._svg, tooltips);
       const old   = this.shadowRoot.getElementById('tt-layer');
-      this._svg.replaceChild(group, old);
+      //this._svg.replaceChild(group, old);
     }
-  }
-
-  renderFocusAsSvg (widget) {
-    const old = this.shadowRoot.getElementById('iw-layer');
-
-    if ( undefined !== widget.s ) {
-      const iw = CasperEpaperPage.svgRenderer.renderInput(this._svg, widget.s);
-      this._svg.replaceChild(iw, old);
-    }
-
   }
 
   toServerCoordinates (event) {
@@ -149,6 +166,7 @@ class CasperEpaperPage extends LitElement {
       if ( this._currentDetail !== undefined ) {
         if ( y < this._currentDetail.y1 || y > this._currentDetail.y2 ) {
           this._currentDetail.r.classList.remove('hover-detail');
+          this._contextMenu.style.display = 'none';
           this._currentDetail = undefined;
         }
       }
@@ -159,6 +177,12 @@ class CasperEpaperPage extends LitElement {
         if ( band !== undefined ) {
           band.r.classList.add('hover-detail');
           this._currentDetail = band;
+          if ( this.epaper._document.chapter.editable) {
+            this._contextMenu.style.display = 'flex';
+            const tx = 575 * this.epaper.zoom;
+            const ty = (band.y1 + (band.y2 - band.y1) / 2) * this.epaper.zoom - this._contextMenu.getBoundingClientRect().height / 2 ;
+            this._contextMenu.style.transform = `translate(${tx}px,${ty}px)`;
+          }
         }
       }
     }

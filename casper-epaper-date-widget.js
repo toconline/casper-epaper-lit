@@ -18,21 +18,16 @@
   -
  */
 
-import { css, html } from 'lit';
+//import { css, html } from 'lit';
 import { CasperEpaperTextWidget } from './casper-epaper-text-widget.js';
-import '@cloudware-casper/casper-icons/casper-icon.js';
+//import '@cloudware-casper/casper-icons/casper-icon.js';
 
 export class CasperEpaperDateWidget extends CasperEpaperTextWidget {
-    
-  constructor () {
-    super();
+
+  get overlayIcon () {
+    return 'fa-light:calendar-alt';
   }
 
-  render () {
-    return html`<input id="textarea" tabindex="1" autocomplete="off"></input>
-                <casper-icon icon="fa-light:calendar-alt" class="overlay-icon" overlay="${this.overlay}" @click="${this._toogleOverlay}"></casper-icon>`;
-  }
-  
 }
 
 window.customElements.define('casper-epaper-date-widget', CasperEpaperDateWidget);

@@ -41,9 +41,6 @@ export class CasperEpaperWidget extends LitElement {
     this.overlay  = 'closed'; 
     this._binding = undefined;
     this._visible = false;
-    //this.addEventListener('keypress', e => this._onKeypress(e));
-    //this.addEventListener('keydown', e => this._onKeyDown(e));
-    //this.addEventListener('tap', e => this._onTap(e));
   }
 
   async attach (binding) {
@@ -57,9 +54,9 @@ export class CasperEpaperWidget extends LitElement {
 
   detach () {
     this.style.display = 'none';
-    // no meed to updayte invisble sheet this.requestUpdate();
+    // no need to update invisible shit this.requestUpdate();
     if ( this.overlay === 'open' ) {
-      this._overlay.hidePopover();
+      this._overlay?.hidePopover();
       this.overlay = 'closed';
     }
   }
@@ -77,11 +74,11 @@ export class CasperEpaperWidget extends LitElement {
   _toogleOverlay (event) {
     if ( this.overlay === 'open' ) {
       this.overlay = 'closed';
-      this._overlay.hidePopover(event);
+      this._overlay?.hidePopover(event);
     } else {
       this.overlay = 'open';
       this._textArea.value = undefined;
-      this._overlay.showPopover(event);
+      this._overlay?.showPopover(event);
     }
     this._textArea.focus();
   }
@@ -94,19 +91,15 @@ export class CasperEpaperWidget extends LitElement {
     }
   }
 
+  grabFocus () {
+    // to nothing if don't know what to do 
+  }
+
   /*****************************************************************************************/
   /*                                                                                       */
   /*                             ~~~ Input helper functions ~~~                            */
   /*                                                                                       */
   /*****************************************************************************************/
-
-  grabFocus () {
-    // to nothing if don't know what to do 
-  }
-
-  _onKeypress (event) {
-    /* do nothing */
-  }
 
   /**
    * Convert keycode to virtual key code that is understood by the server

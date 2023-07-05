@@ -19,13 +19,17 @@
  */
 
 
-import { css, html } from 'lit';
+//import { css, html } from 'lit';
 import { CasperEpaperTextWidget } from './casper-epaper-text-widget.js';
-import '@cloudware-casper/casper-icons/casper-icon.js';
-import '@cloudware-casper/casper-select-lit/casper-select-lit.js';
-import '@cloudware-casper/casper-select-lit/components/casper-highlightable.js';
+//import '@cloudware-casper/casper-icons/casper-icon.js';
+//import '@cloudware-casper/casper-select-lit/casper-select-lit.js';
+//import '@cloudware-casper/casper-select-lit/components/casper-highlightable.js';
 
 export class CasperEpaperSelectWidget extends CasperEpaperTextWidget {
+
+  get overlayIcon () {
+    return 'fa-regular:angle-down';
+  }
 
 }
 

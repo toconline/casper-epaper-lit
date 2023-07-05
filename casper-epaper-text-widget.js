@@ -34,7 +34,9 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
     .overlay-icon {
       align-self: flex-center;
       color: var(--dark-primary-color);
-      margin: 3px;
+      margin: 0px;
+      width: 15px;
+      height: 15px;
       cursor: pointer;
       flex-shrink: 0;
       transition: transform 200ms linear;
@@ -56,6 +58,10 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
       background-color: transparent !important;
     }`;
 
+  get overlayIcon () {
+    return undefined;
+  }
+
   attach (binding) {
     this._value = binding.p.dv;
     super.attach(binding);
@@ -65,7 +71,11 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
     return html`<input id="textarea" autocomplete="off" 
       @keydown=${(e) => this._keyDown(e)}
       @keyup=${(e) => this._keyUp(e)}
-      @click=${(e) => this._click(e)}></input>`;
+      @click=${(e) => this._click(e)}></input>
+      ${this.overlayIcon ?  
+        html`<casper-icon icon="${this.overlayIcon}" 
+              class="overlay-icon" overlay="${this.overlay}" @click="${this._toogleOverlay}">
+            </casper-icon>` : ''}`;
   }
 
   /*

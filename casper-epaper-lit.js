@@ -172,7 +172,6 @@ class CasperEpaperLit extends LitElement {
     .back-page {
       background-color: #fffbc3;
     }
-
   `;
 
   constructor () {
@@ -250,9 +249,31 @@ class CasperEpaperLit extends LitElement {
 
   async setValue (value, vkey) {
     try {
-      // spinner ??
+      // spinner 
       // await promise
       return await this._socket.setText(this._document.serverId, value, vkey === 'shift+tab' ? 'left' : 'right');
+    } catch (error) {
+      this._showToast(error);
+      return undefined;
+    }
+  }
+
+  async addDocumentLine (event, band) {
+    try {
+      // spinner 
+      // await promise
+      return await this._socket.addBand(this._document.serverId, 'DT', band.idx);
+    } catch (error) {
+      this._showToast(error);
+      return undefined;
+    }
+  }
+
+  async removeDocumentLine (event, band) {
+    try {
+      // spinner ??
+      // await promise
+      return await this._socket.deleteBand(this._document.serverId, 'DT', band.idx);
     } catch (error) {
       this._showToast(error);
       return undefined;
@@ -290,13 +311,12 @@ class CasperEpaperLit extends LitElement {
   }
 
   render () {
-
+    /* @paste=${(e)   => this._paste(e)} */
     return html`
       <div class="background" tabindex="0"
         @keydown=${(e) => this._onKeyDown(e)}
         @keyup=${(e)   => this._onKeyUp(e)}
         @input=${(e)   => this._onInput(e)}
-        @paste=${(e)   => this._paste(e)}
         @click="${(e) => this._click(e)}" @mousemove="${(e) => this._mouseMove(e)}">
         <casper-epaper-page id="back">
         </casper-epaper-page>
@@ -338,6 +358,7 @@ class CasperEpaperLit extends LitElement {
     this._overlay     = this.shadowRoot.getElementById('overlay');
     this._status      = this.shadowRoot.getElementById('status');
     this._statusLabel = this.shadowRoot.getElementById('status-label');
+
     this._hideOverlay();
   }
 
@@ -397,6 +418,7 @@ class CasperEpaperLit extends LitElement {
       this._document = this._docStack[this._docStack.length -1];
       this._docTabs = [];
     }
+    this._updateWidgets();
     this.requestUpdate();
   }
 
@@ -739,6 +761,7 @@ class CasperEpaperLit extends LitElement {
             parseFloat(p.x.toFixed(2)),
             parseFloat(p.y.toFixed(2))
           );
+          break;
         } catch (e) {
           console.log(e);
         }
@@ -843,6 +866,7 @@ class CasperEpaperLit extends LitElement {
 
   async _onKeyDown (event) {
     console.log(event);
+    // TODO map vkey
     // TODO prevent default? TODO prevent command overuns with queue
     if ( this._document.chapter.editable ) {
       switch (event.key) {
@@ -890,7 +914,7 @@ class CasperEpaperLit extends LitElement {
       return;
     }
 
-    const tag = /*binding.s.editable.widget.component ||*/ 'casper-epaper-text-widget';
+    const tag = binding.s.editable.widget.component || 'casper-epaper-text-widget';
     this._widget = this._widgetCache.get(tag);
     if ( ! this._widget ) {
       await import(`./${tag}.js`); // TODO app hash for correct resolve
@@ -898,12 +922,17 @@ class CasperEpaperLit extends LitElement {
       this._widgetCache.set(tag, this._widget);
       this._widget.epaper = this;
     }
-    this._page.shadowRoot.appendChild(this._widget);
+    this._page.shadowRoot.appendChild(this._widget); // HERE??
     this._widget.attach(binding.s);
   }
 
   _updateWidgets () {
-    this._widget?.position();
+    console.log('uw ue uw');
+    if ( this._document?.chapter.editable ) {
+      this._widget?.position();
+    } else {
+      this._widget?.detach();
+    }
   }
 }
 
