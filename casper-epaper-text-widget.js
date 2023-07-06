@@ -17,7 +17,9 @@
   - along with casper-epaper.  If not, see <http://www.gnu.org/licenses/>.
   -
  */
+
 import { css, html } from 'lit';
+import { CasperEpaperLit } from './casper-epaper-lit.js'
 import { CasperEpaperWidget } from './casper-epaper-widget.js';
 
 export class CasperEpaperTextWidget extends CasperEpaperWidget {
@@ -110,7 +112,7 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   }
 
   async _keyDown (event) {
-    const vkey = this._keycodeToVkey(event);
+    const vkey = CasperEpaperLit.keycodeToVkey(event);
 
     if (this._initialSelection === true || this._textArea.value.length === 0) {
       if (['down', 'up', 'left', 'right'].indexOf(vkey) > -1) {

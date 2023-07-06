@@ -12,7 +12,7 @@ import '@cloudware-casper/casper-timed-status/casper-timed-status.js';
 import { CasperSocket } from '@cloudware-casper/casper-socket/casper-socket.js'; // TODO remove this do a propor socket managemnet
 import './casper-epaper-page.js'
 
-class CasperEpaperLit extends LitElement {
+export class CasperEpaperLit extends LitElement {
 
   get MAX_ZOOM () { return 3;   }
   get MIN_ZOOM () { return 0.5; }
@@ -173,6 +173,83 @@ class CasperEpaperLit extends LitElement {
       background-color: #fffbc3;
     }
   `;
+
+  /**
+   * Convert keycode to virtual key code that is understood by the server
+   *
+   * @param event The Keyboard event
+   *
+   * @return the virtual key name or null if there no mapping
+   */
+  static keycodeToVkey (event) {
+    switch (event.keyCode) {
+      case 8: // backspace
+        return 'backspace';
+      case 9: // tab
+        if (event.shiftKey === true) {
+          return 'shift+tab';
+        } else {
+          return 'tab';
+        }
+        break;
+      case 13: // enter
+        return 'enter';
+      case 27: // escape
+        return 'esc';
+      case 32: // space
+        return ' ';
+      case 37: // left
+        return 'left';
+      case 39: // right
+        return 'right';
+      case 38: // up
+        if (event.shiftKey === true) {
+          return 'shift+up';
+        } else {
+          return 'up';
+        }
+        break;
+      case 40: // down
+        if (event.shiftKey === true) {
+          return 'shift+down';
+        } else {
+          return 'down';
+        }
+        break;
+      case 46:
+        return 'delete';
+      case 65:
+        if (event.ctrlKey) {
+          return 'ctrl+a';
+        }
+        break;
+      case 69:
+        if (event.ctrlKey) {
+          return 'ctrl+e';
+        }
+        break;
+      case 75:
+        if (event.ctrlKey) {
+          return 'ctrl+k';
+        }
+        break;
+      case 113:
+        return 'F2';
+      case 16:
+        return 'shift';
+      case 17:
+        return 'ctrl';
+      case 18:
+        return 'alt';
+      case 91:
+        return 'window+left';
+      case 92:
+        return 'window+right';
+      default:
+        break;
+    }
+    return null;
+  }
 
   constructor () {
     super();
@@ -870,7 +947,15 @@ class CasperEpaperLit extends LitElement {
     // TODO map vkey
     // TODO prevent default? TODO prevent command overuns with queue
     if ( this._document.chapter.editable ) {
-      switch (event.key) {
+      const vkey = CasperEpaperLit.keycodeToVkey(event);
+      if (['up', 'down', 'left', 'right'].includes(vkey) ) {
+        await this.moveCursor(vkey);
+      } else if (['tab', 'shift-tab'].includes(vkey)) {
+        event.preventDefault();
+        await this.moveCursor(vkey === 'tab' ? 'right' : 'left');
+      }
+    }
+      /*switch (event.key) {
         case 'ArrowUp':
           await this.moveCursor('up');
           break;
@@ -886,9 +971,7 @@ class CasperEpaperLit extends LitElement {
         case 'Tab':
           event.preventDefault();
           await this.moveCursor(event.shiftKey ? 'left' : 'right');
-          break;
-      }
-    }
+          break;*/
   }
 
   _onKeyUp (event) {
