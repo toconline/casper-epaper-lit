@@ -151,6 +151,8 @@ class CasperEpaperPage extends LitElement {
     p.y = Math.floor(event.clientY);
     if ( this._svg ) {
       p = p.matrixTransform(this._svg.getScreenCTM().inverse());
+      p.x /= this.epaper.zoom;
+      p.y /= this.epaper.zoom;
     }
     return p;
   }
@@ -160,7 +162,7 @@ class CasperEpaperPage extends LitElement {
       // ... transform screen coordinates to SVG coordinates ...
       this._auxP.x = Math.floor(event.clientX);
       this._auxP.y = Math.floor(event.clientY);
-      const y = this._auxP.matrixTransform(this._svg.getScreenCTM().inverse()).y;
+      const y = this._auxP.matrixTransform(this._svg.getScreenCTM().inverse()).y / this.epaper.zoom;
 
       // ... check if the mouse moved out of the current detail band ...
       if ( this._currentDetail !== undefined ) {

@@ -81,6 +81,7 @@ export class CasperEpaperWidget extends LitElement {
       this._overlay?.showPopover(event);
     }
     this._textArea.focus();
+    event.stopPropagation();
   }
 
   hideOverlays (hideButtons) {

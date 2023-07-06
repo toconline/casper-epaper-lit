@@ -750,22 +750,23 @@ class CasperEpaperLit extends LitElement {
         const idx = link.handler.lastIndexOf('/') + 1;
         const module = await import(`${link.handler.slice(0,idx)}${app.digest ? `${app.digest}.` : ''}${link.handler.slice(idx)}`);
         await this.pushEpaper(await module.link_handler(link, this._document));
-        break;
+        return;
       } else if ( elem.classList && elem.classList.contains('tab') ) {
         this._handleTabClick(elem);
+        return;
       } else {
-        try {
-          let p = this._page.toServerCoordinates(event);
-          await this._socket.sendClick(
-            this._document.serverId,
-            parseFloat(p.x.toFixed(2)),
-            parseFloat(p.y.toFixed(2))
-          );
-          break;
-        } catch (e) {
-          console.log(e);
-        }
+
       }
+    }
+    try {
+      let p = this._page.toServerCoordinates(event);
+      await this._socket.sendClick(
+        this._document.serverId,
+        parseFloat(p.x.toFixed(2)),
+        parseFloat(p.y.toFixed(2))
+      );
+    } catch (e) {
+      console.log(e);
     }
   }
 
@@ -927,7 +928,6 @@ class CasperEpaperLit extends LitElement {
   }
 
   _updateWidgets () {
-    console.log('uw ue uw');
     if ( this._document?.chapter.editable ) {
       this._widget?.position();
     } else {

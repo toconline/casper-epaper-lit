@@ -56,6 +56,10 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
       box-sizing: border-box !important;
       outline: none !important;
       background-color: transparent !important;
+    }
+
+    input::selection {
+      background: #bcdbc8;
     }`;
 
   get overlayIcon () {
@@ -91,7 +95,7 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   updated () {
     this._textArea.style.fontFamily = this._binding.p.fn;
     this._textArea.style.fontSize   = this._binding.p.fs + 'px'; // fs / this._binding.ratio + 'px';
-    //this._textArea.style.color      = this._binding.fc;
+    this._textArea.style.color      = this._binding.fc;
     // TODO BOLD/ITALIC
 
     if ( this._value ) {
