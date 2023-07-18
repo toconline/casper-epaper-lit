@@ -339,7 +339,7 @@ export class CasperEpaperLit extends LitElement {
     try {
       // spinner 
       // await promise
-      return await this._socket.addBand(this._document.serverId, 'DT', band.idx);
+      return await this._socket.addBand(this._document.serverId, 'DT', band.id);
     } catch (error) {
       this._showToast(error);
       return undefined;
@@ -350,7 +350,7 @@ export class CasperEpaperLit extends LitElement {
     try {
       // spinner ??
       // await promise
-      return await this._socket.deleteBand(this._document.serverId, 'DT', band.idx);
+      return await this._socket.deleteBand(this._document.serverId, 'DT', band.id);
     } catch (error) {
       this._showToast(error);
       return undefined;

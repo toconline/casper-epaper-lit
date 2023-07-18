@@ -98,6 +98,7 @@ export class EpaperSvgRenderer extends EpaperRenderer {
         y2:  p.oy + p.h,
         h:   p.h,
         idx: p.idx,
+        id:  band.i,
         r:   r
       });
     }
