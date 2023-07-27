@@ -18,7 +18,7 @@
   -
  */
 
-import { LitElement } from 'lit';
+import { LitElement, html } from 'lit';
 
 export class CasperEpaperWidget extends LitElement {
 
@@ -30,7 +30,7 @@ export class CasperEpaperWidget extends LitElement {
        * @type {String}
        */
       overlay: {
-        type: String,
+        type: Boolean,
         reflect: true
       }
     };
@@ -38,7 +38,8 @@ export class CasperEpaperWidget extends LitElement {
 
   constructor () {
     super();
-    this.overlay  = 'closed'; 
+    this.overlay  = false;
+    this._overlay = html`<div id="overlay">The overlay</div>`;
     this._binding = undefined;
     this._visible = false;
   }
@@ -56,7 +57,7 @@ export class CasperEpaperWidget extends LitElement {
     this.style.display = 'none';
     // no need to update invisible shit this.requestUpdate();
     if ( this.overlay === 'open' ) {
-      this._overlay?.hidePopover();
+      //this._overlay?.hidePopover();
       this.overlay = 'closed';
     }
   }
@@ -71,14 +72,20 @@ export class CasperEpaperWidget extends LitElement {
     this.style.transform = `scale(${zoom}) translate(${this._binding.p.x}px,${this._binding.p.y}px)`;
   }
 
+  positionOverlay () {
+    if ( this._overlay ) {
+
+    }
+  }
+
   _toogleOverlay (event) {
-    if ( this.overlay === 'open' ) {
-      this.overlay = 'closed';
-      this._overlay?.hidePopover(event);
+    console.log(`~~~ ${this.overlay}`);
+    if ( this.overlay ) {
+      this.overlay = false;
+      //this._overlay?.hidePopover(event);
     } else {
-      this.overlay = 'open';
-      this._textArea.value = undefined;
-      this._overlay?.showPopover(event);
+      this.overlay = true;
+      //this._overlay?.showPopover(event);
     }
     this._textArea.focus();
     event.stopPropagation();

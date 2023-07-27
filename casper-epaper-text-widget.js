@@ -33,8 +33,37 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
       align-items: center;
     }
 
+    input-wrapper {
+      display: flex;
+      position: relative;
+      height: 100%;
+      width: 100%;
+      padding: 0px;
+      margin: 0px;
+    }
+
+    input::selection {
+      background: #bcdbc8;
+    }
+
+    input {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      padding: 0px;
+      margin: 0px;
+      top: 0px;
+      left: 0px;
+      border: none;
+      box-sizing: border-box !important;
+      outline: none !important;
+      background-color: transparent !important;
+    }
+
     .overlay-icon {
-      align-self: flex-center;
+      position: absolute;
+      top: calc(50% - 7.5px);
+      right: 3px;
       color: var(--dark-primary-color);
       margin: 0px;
       width: 15px;
@@ -44,25 +73,19 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
       transition: transform 200ms linear;
     }
 
-    .overlay-icon[overlay=open] {
+    .overlay-icon[overlay] {
       transform: rotate(-180deg);
     }
 
-    input {
-      position: relative;
-      height: 100%;
+    #overlay {
+      display: flex;
+      position: absolute;
+      top: calc(100% + 3px);
+      background-color: #ccc;
+      height: 18px;
       width: 100%;
-      padding: 0px;
-      margin: 0px;
-      border: none;
-      box-sizing: border-box !important;
-      outline: none !important;
-      background-color: transparent !important;
     }
-
-    input::selection {
-      background: #bcdbc8;
-    }`;
+  `;
 
   get overlayIcon () {
     return undefined;
@@ -74,14 +97,23 @@ export class CasperEpaperTextWidget extends CasperEpaperWidget {
   }
 
   render () {
-    return html`<input id="textarea" autocomplete="off" 
-      @keydown=${(e) => this._keyDown(e)}
-      @keyup=${(e) => this._keyUp(e)}
-      @click=${(e) => this._click(e)}></input>
-      ${this.overlayIcon ?  
-        html`<casper-icon icon="${this.overlayIcon}" 
-              class="overlay-icon" overlay="${this.overlay}" @click="${this._toogleOverlay}">
-            </casper-icon>` : ''}`;
+    return html`<div id="wrapper" class="input-wrapper">
+                  <input id="textarea" autocomplete="off"
+                         @keydown=${(e) => this._keyDown(e)}
+                         @keyup=${(e) => this._keyUp(e)}
+                         @click=${(e) => this._click(e)}>
+                  </input>
+                  ${this.overlayIcon
+                  ? html`
+                  <casper-icon icon="${this.overlayIcon}"
+                               class="overlay-icon" 
+                               ?overlay="${this.overlay}"
+                               @click="${this._toogleOverlay}">
+                  </casper-icon>` 
+                  : ''}
+                </div>
+                ${this.overlay ? this._overlay : ''}`;
+      ;
   }
 
   /*

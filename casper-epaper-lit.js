@@ -339,6 +339,7 @@ export class CasperEpaperLit extends LitElement {
     try {
       // spinner 
       // await promise
+      debugger;
       return await this._socket.addBand(this._document.serverId, 'DT', band.id);
     } catch (error) {
       this._showToast(error);
