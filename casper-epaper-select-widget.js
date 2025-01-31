@@ -21,9 +21,9 @@
 
 //import { css, html } from 'lit';
 import { CasperEpaperTextWidget } from './casper-epaper-text-widget.js';
-//import '@cloudware-casper/casper-icons/casper-icon.js';
-//import '@cloudware-casper/casper-select-lit/casper-select-lit.js';
-//import '@cloudware-casper/casper-select-lit/components/casper-highlightable.js';
+//import '@toconline/casper-icons/casper-icon.js';
+//import '@toconline/casper-select-lit/casper-select-lit.js';
+//import '@toconline/casper-select-lit/components/casper-highlightable.js';
 
 export class CasperEpaperSelectWidget extends CasperEpaperTextWidget {
 

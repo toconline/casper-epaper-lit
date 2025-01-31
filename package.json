@@ -1,5 +1,5 @@
 {
-  "name": "@cloudware-casper/casper-epaper-lit",
+  "name": "@toconline/casper-epaper-lit",
   "main": "casper-epaper-lit.js",
   "version": "0.0.13",
   "description": "another take on epaper 2022 style",
@@ -7,6 +7,6 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "dependencies": {
-    "@cloudware-casper/casper-icons": "^3.x"
+    "@toconline/casper-icons": "^3.x"
   }
 }
