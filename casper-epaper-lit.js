@@ -8,8 +8,8 @@
 // https://marian-caikovski.medium.com/do-not-waste-users-time-on-rendering-off-screen-content-eed17636e7a7
 
 import { html, css, LitElement } from 'lit';
-import '@cloudware-casper/casper-timed-status/casper-timed-status.js';
-import { CasperSocket } from '@cloudware-casper/casper-socket/casper-socket.js'; // TODO remove this do a propor socket managemnet
+import '@toconline/casper-timed-status/casper-timed-status.js';
+import { CasperSocket } from '@toconline/casper-socket/casper-socket.js'; // TODO remove this do a propor socket managemnet
 import './casper-epaper-page.js'
 
 export class CasperEpaperLit extends LitElement {
